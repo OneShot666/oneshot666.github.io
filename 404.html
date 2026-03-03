@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erreur 404 | Mission Échouée</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        /* Effet de scanline style vieux moniteur */
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 6s linear infinite;
+        }
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100%; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans overflow-hidden">
+
+<div class="scanline"></div>
+
+<main class="h-screen flex flex-col justify-center items-center text-center p-5 relative z-20">
+
+    <div class="mb-8 font-mono text-blue-500 opacity-80">
+        <p>> STACK_TRACE: PAGE_NOT_FOUND</p>
+        <p>> ERROR_CODE: 0x00000194</p>
+    </div>
+
+    <h1 class="text-9xl font-black mb-4 gradient-text tracking-tighter italic">404</h1>
+
+    <h2 class="text-3xl font-bold mb-6 uppercase tracking-widest">Mission Échouée</h2>
+
+    <p class="text-gray-400 max-w-md mb-10 leading-relaxed">
+        Il semblerait que vous ayez tenté de sortir des limites de la map.
+        Le fichier que vous cherchez a été supprimé ou n'a jamais été compilé.
+    </p>
+
+    <a href="index.html" class="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-blue-600 font-pj rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 hover:bg-blue-500">
+        <span class="mr-2">REPRENDRE AU DERNIER CHECKPOINT</span>
+        <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+        </svg>
+    </a>
+
+    <div class="absolute inset-0 z-0 pointer-events-none opacity-20">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500 rounded-full blur-[120px]"></div>
+    </div>
+
+</main>
+
+</body>
+</html>
