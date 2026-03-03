@@ -1,145 +1,122 @@
 <!DOCTYPE html>
-
 <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>One Shot | Portfolio</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Shot | Ourofolios</title>
+    <meta name="description" content="Portfolio de projets informatiques : Python, Jeux Vidéo, sites et logiciels.">
+    <link rel="icon" type="image/png" href="assets/img/icon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
 
-        <meta name="description" content="Portfolio de projets informatiques : Python, Jeux Vidéo (Unreal, Unity), IA et logiciels.">
+<body>
+<canvas id="neural-canvas" class="fixed top-0 left-0 w-full h-full -z-10 opacity-30"></canvas>
 
-        <link rel="icon" type="image/png" href="assets/img/icon.ico">
-    
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link rel="stylesheet" href="assets/css/style.css">
-    </head>
-
-    <body class="bg-gray-900 text-white font-sans scroll-smooth">
-        <canvas id="neural-canvas" class="fixed top-0 left-0 w-full h-full -z-10 opacity-30"></canvas>
-
-        <header>
-            <nav class="fixed w-full bg-gray-900/90 backdrop-blur-sm z-50 p-4 border-b border-gray-800">
-                <div class="max-w-6xl mx-auto flex justify-between items-center">
-
-                    <a href="index.html" class="flex items-center gap-3 group hover:opacity-90 transition-all">
-                        <img src="assets/img/icon.png" alt="Logo Portfolio" class="w-10 h-10 rounded-lg group-hover:scale-105 transition-transform">
-                        <span class="text-xl font-extrabold tracking-tight gradient-text">Ourofolios</span>
-                    </a>
-
-                    <div class="hidden md:flex space-x-8 text-sm font-medium items-center">
-                        <a href="#projets" class="hover:text-blue-400 transition">PROJETS</a>
-                        <a href="#about" class="hover:text-blue-400 transition">À PROPOS</a>
-                        <a href="mailto:votre@email.com" class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg transition text-white">
-                            CONTACT
-                        </a>
-                    </div>
-                </div>
-            </nav>
-        </header>
-
-        <header class="min-h-screen flex flex-col justify-center items-center text-center p-5 relative">
-            <h1 class="text-6xl md:text-8xl font-black mb-6 leading-none">
-                De la data<br><span class="gradient-text">à l'immersion</span>
-            </h1>
-            <p class="text-xl text-gray-400 max-w-2xl leading-relaxed">
-                Développeur informatique spécialisé en Python, IA et création de jeux immersifs sur Unreal Engine et Unity.
-            </p>
-            <div class="mt-12 flex gap-6">
-                <a href="#projets" class="px-8 py-4 bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition">Découvrir mes projets</a>
-                <a href="https://github.com/oneshot666" class="px-8 py-4 border border-gray-700 rounded-xl font-bold hover:bg-gray-800 transition">Mon GitHub</a>
+<header>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <img src="assets/img/icon.png" alt="Logo" class="w-10 h-10 rounded-lg transition-transform group-hover:scale-105">
+                <span class="text-xl font-extrabold tracking-tight gradient-text">Ourofolios</span>
+            </a>
+            <div class="nav-links-container">
+                <a href="#projets" class="nav-link">PROJETS</a>
+                <a href="#about" class="nav-link">À PROPOS</a>
+                <a href="mailto:oneshot666@email.com" class="btn-contact">CONTACT</a>
             </div>
-        </header>
+        </div>
+    </nav>
+</header>
 
-        <section id="projets-example" class="max-w-7xl mx-auto py-24 px-5">
-            <h2 class="text-4xl font-extrabold mb-16 border-l-8 border-blue-600 pl-6">Mes Réalisations</h2>
+<main>
+    <section class="hero">
+        <h1 class="hero-title">De l'imagination<br><span class="gradient-text">à l'immersion</span></h1>
+        <p class="hero-subtitle">Développeur informatique spécialisé en Python et création de jeux vidéo sur Unity et Unreal Engine.</p>
+        <div class="hero-buttons">
+            <a href="#projets" class="btn-primary">Découvrir mes projets</a>
+            <a href="https://github.com/oneshot666" class="btn-outline">Mon GitHub</a>
+        </div>
+    </section>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-
-                <div class="project-card rounded-2xl overflow-hidden group">
-                    <div class="h-48 bg-gray-800 flex items-center justify-center italic text-gray-600 group-hover:bg-gray-700 transition">[DÉMO OU LOGO]</div>
-                    <div class="p-6">
-                        <span class="inline-block bg-red-950 text-red-300 text-xs px-3 py-1 rounded-full uppercase font-bold tracking-wider mb-3">Python / Data</span>
-                        <h3 class="text-2xl font-bold text-white group-hover:text-red-400 transition">Titre du Projet Python</h3>
-                        <p class="text-gray-400 mt-2 text-sm leading-relaxed">Description concise du projet, technologie utilisée, problème résolu.</p>
-                    </div>
-                </div>
-
-                <div class="project-card rounded-2xl overflow-hidden group">
-                    <div class="h-48 bg-gray-800 flex items-center justify-center italic text-gray-600 group-hover:bg-gray-700 transition">[VIDÉO GAMEPLAY]</div>
-                    <div class="p-6">
-                        <span class="inline-block bg-blue-950 text-blue-300 text-xs px-3 py-1 rounded-full uppercase font-bold tracking-wider mb-3">Unreal Engine / C++</span>
-                        <h3 class="text-2xl font-bold text-white group-hover:text-blue-400 transition">Titre du Jeu Unreal</h3>
-                        <p class="text-gray-400 mt-2 text-sm leading-relaxed">Description concise du gameplay, mécanique principale, démo technique.</p>
-                    </div>
-                </div>
-
-                <div class="project-card rounded-2xl overflow-hidden group">
-                    <div class="h-48 bg-gray-800 flex items-center justify-center italic text-gray-600 group-hover:bg-gray-700 transition">[WEBGL DEMO]</div>
-                    <div class="p-6">
-                        <span class="inline-block bg-green-950 text-green-300 text-xs px-3 py-1 rounded-full uppercase font-bold tracking-wider mb-3">Unity / C#</span>
-                        <h3 class="text-2xl font-bold text-white group-hover:text-green-400 transition">Titre du Jeu Unity</h3>
-                        <p class="text-gray-400 mt-2 text-sm leading-relaxed">Description concise, mécanique de jeu, jouable en WebGL.</p>
-                    </div>
-                </div>
-
-                <div class="project-card rounded-2xl overflow-hidden group">
-                    <div class="h-48 bg-gray-800 flex items-center justify-center italic text-gray-600 group-hover:bg-gray-700 transition">[SCREENSHOT]</div>
-                    <div class="p-6">
-                        <span class="inline-block bg-yellow-950 text-yellow-300 text-xs px-3 py-1 rounded-full uppercase font-bold tracking-wider mb-3">Informatique Générale</span>
-                        <h3 class="text-2xl font-bold text-white group-hover:text-yellow-400 transition">Logiciel ou Outil</h3>
-                        <p class="text-gray-400 mt-2 text-sm leading-relaxed">Application desktop, script d'automatisation ou base de données.</p>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <section id="projets" class="max-w-7xl mx-auto py-12 px-5">
-            <h2 class="text-3xl font-bold mb-10 border-l-4 border-blue-600 pl-4 text-white">Projets à la une</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            </div>
-        </section>
-
-        <section class="max-w-7xl mx-auto py-12 px-5 opacity-80">
-            <h2 class="text-2xl font-bold mb-10 border-l-4 border-gray-600 pl-4 text-gray-400">Autres dépôts GitHub</h2>
-            <div id="github-projects-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            </div>
-        </section>
-
-        <footer id="main-footer" class="fixed bottom-0 left-0 w-full bg-gray-900/95 border-t border-gray-800 backdrop-blur-md translate-y-full transition-all duration-500 ease-in-out z-40 group hover:h-48 h-12">
-
-            <div class="h-12 flex items-center justify-center cursor-pointer">
-                <span class="text-xs font-bold tracking-[0.3em] text-gray-500 group-hover:text-blue-400 transition-colors uppercase">
-                    Informations de contact & Réseaux
-                </span>
-            </div>
-
-            <div class="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-150">
-
-                <div>
-                    <h4 class="text-sm font-bold text-white mb-3">Ourofolios</h4>
-                    <p class="text-xs text-gray-400 leading-relaxed">Développeur Python & Game Dev. Création de solutions logicielles et d'expériences immersives.</p>
-                </div>
-
-                <div>
-                    <h4 class="text-sm font-bold text-white mb-3">Navigation</h4>
-                    <ul class="text-xs text-gray-400 space-y-2">
-                        <li><a href="#projets" class="hover:text-blue-400 transition">Projets</a></li>
-                        <li><a href="#about" class="hover:text-blue-400 transition">À propos</a></li>
-                        <li><a href="mailto:oneshot666@email.com" class="hover:text-blue-400 transition">Me contacter</a></li>
-                    </ul>
-                </div>
-
-                <div class="flex flex-col items-end justify-center">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span class="text-xs font-mono text-gray-400">Disponible pour projets</span>
-                    </div>
-                    <p class="text-[10px] text-gray-600">© 2024 • Build with GitHub Pages</p>
+    <section id="projets-example" class="py-24">
+        <h2 class="section-title">Mes réalisations</h2>
+        <div class="project-grid">
+            <div class="project-card group">
+                <div class="project-media">[DÉMO OU LOGO]</div>
+                <div class="project-body">
+                    <span class="tag tag-python">Python / Data</span>
+                    <h3 class="project-title group-hover:text-red-400">Titre du Projet Python</h3>
+                    <p class="project-text">Description concise du projet.</p>
                 </div>
             </div>
-        </footer>
+            <div class="project-card group">
+                <div class="project-media">[VIDÉO GAMEPLAY]</div>
+                <div class="project-body">
+                    <span class="tag tag-unreal">Unreal Engine / C++</span>
+                    <h3 class="project-title group-hover:text-blue-400">Titre du Jeu Unreal</h3>
+                    <p class="project-text">Description concise du gameplay.</p>
+                </div>
+            </div>
+            <div class="project-card group">
+                <div class="project-media">[WEBGL DEMO]</div>
+                <div class="project-body">
+                    <span class="tag tag-unity">Unity / C#</span>
+                    <h3 class="project-title group-hover:text-green-400">Titre du Jeu Unity</h3>
+                    <p class="project-text">Description concise, mécanique de jeu.</p>
+                </div>
+            </div>
+            <div class="project-card group">
+                <div class="project-media">[SITE WEB]</div>
+                <div class="project-body">
+                    <span class="tag tag-general">Dev web</span>
+                    <h3 class="project-title group-hover:text-green-400">Titre du site web</h3>
+                    <p class="project-text">Description concise du site.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        <script src="assets/js/main.js"></script>
-    </body>
+    <section id="projets" class="py-12">
+        <h2 class="section-subtitle">Projets à la une</h2>
+        <div class="project-grid">
+        </div>
+    </section>
+
+    <section class="py-12 opacity-80">
+        <h2 class="text-2xl font-bold mb-10 border-l-4 border-gray-600 pl-4 text-gray-400 uppercase tracking-widest">Autres projets GitHub</h2>
+        <div id="github-projects-container" class="github-grid">
+        </div>
+    </section>
+</main>
+
+<footer id="main-footer" class="footer-reveal">
+    <div class="footer-handle">
+        <span class="footer-handle-text">Informations de contact & Réseaux</span>
+    </div>
+    <div class="footer-content">
+        <div>
+            <h4 class="text-sm font-bold text-white mb-3">Ourofolios</h4>
+            <p class="text-xs text-gray-400 leading-relaxed">Développeur Python & Game Dev. Création de solutions logicielles et d'expériences immersives.</p>
+        </div>
+        <div>
+            <h4 class="text-sm font-bold text-white mb-3">Navigation</h4>
+            <ul class="text-xs text-gray-400 space-y-2">
+                <li><a href="#projets" class="nav-link">Projets</a></li>
+                <li><a href="#about" class="nav-link">À propos</a></li>
+                <li><a href="mailto:oneshot666@email.com" class="nav-link">Me contacter</a></li>
+            </ul>
+        </div>
+        <div class="flex flex-col items-end justify-center">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span class="text-xs font-mono text-gray-400 uppercase">Disponible</span>
+            </div>
+            <p class="text-[10px] text-gray-600 font-mono italic text-right uppercase">© 2026 • Ouroboros Games • Build with GitHub Pages</p>
+        </div>
+    </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+</body>
 </html>
