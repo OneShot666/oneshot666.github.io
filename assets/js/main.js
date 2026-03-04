@@ -1,136 +1,10 @@
-// BASICS
-function titleCase(s) {
-    return s.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-}
+/* --- UTILS --- */
+const titleCase = (s) => s.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-
-// CURSOR
-const cursor = document.getElementById('custom-cursor');
-
-document.addEventListener('mousemove', (e) => {
-    // Met à jour la position
-    cursor.style.left = e.clientX + 'px';
-    cursor.style.top = e.clientY + 'px';
-
-    // Si c'est le premier mouvement, on l'affiche
-    if (cursor.style.opacity === "0") {
-        cursor.style.opacity = "1";
-    }
-});
-
-// Cache la LED quand on sort de la fenêtre
-document.addEventListener('mouseleave', () => {
-    cursor.style.opacity = "0";
-});
-
-// La LED réapparaît quand on rentre
-document.addEventListener('mouseenter', () => {
-    cursor.style.opacity = "1";
-});
-
-// Effet interactif : la LED grossit sur les liens
-const links = document.querySelectorAll('a, button, .footer-handle');
-links.forEach(link => {
-    link.addEventListener('mouseenter', () => {
-        cursor.style.transform = 'translate(-50%, -50%) scale(1.5)';
-        cursor.style.backgroundColor = '#60a5fa'; // Bleu plus clair
-    });
-    link.addEventListener('mouseleave', () => {
-        cursor.style.transform = 'translate(-50%, -50%) scale(1)';
-        cursor.style.backgroundColor = '#3b82f6';
-    });
-});
-
-// AUTOMATISATION
-async function fetchGithubProjects() {
-    const username = 'OneShot666';
-    const container = document.getElementById('github-projects-container');
-
-    const forbiddenRepos = [username.toLowerCase(), 'ourofolios', 'portfolio'];
-
-    try {
-        const response = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
-
-        if (response.status === 403) {                                          // 403: Quota reach
-            container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full">
-                Quota d'API GitHub temporairement atteint. Réessayez dans un instant.
-            </p>`;
-            return;
-        }
-
-        const repos = await response.json();
-
-        if (!Array.isArray(repos)) {                                            // Check repos if an array
-            console.error("Format de réponse GitHub invalide", repos);
-            return;
-        }
-
-        container.innerHTML = '';
-
-        repos.forEach(repo => {
-            const isForbidden = forbiddenRepos.some(keyword => repo.name.toLowerCase().includes(keyword));
-            if (repo.fork || isForbidden) return;                               // Ignore forks and unwanted projects
-
-            // Détection du type via les "topics" de GitHub
-            const topics = repo.topics || [];
-            let config = { tag: 'tag-general', label: 'Informatique', color: 'yellow', bg: 'bg-yellow-950', text: 'text-yellow-300',
-                hover: 'group-hover:text-yellow-400' };                         // Informatic project by default
-
-            if (topics.includes('python')) {
-                config = { tag: 'tag-python', label: 'Python', color: 'red', bg: 'bg-red-950', text: 'text-red-300',
-                hover: 'group-hover:text-red-400' };
-            } else if (topics.includes('unreal-engine')) {
-                config = { tag: 'tag-unreal', label: 'Unreal Engine', color: 'blue', bg: 'bg-blue-950', text: 'text-blue-300',
-                hover: 'group-hover:text-blue-400' };
-            } else if (topics.includes('unity')) {
-                config = { tag: 'tag-unity', label: 'Unity', color: 'green', bg: 'bg-green-950', text: 'text-green-300',
-                hover: 'group-hover:text-green-400' };
-            }
-
-            reponame = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
-            url_style = "inline-block mt-4 text-xs text-blue-400 hover:text-white transition-colors uppercase font-bold tracking-widest"
-
-            const card = `
-                <div class="project-card rounded-2xl overflow-hidden group">
-                    <div class="project-media">
-                        <span class="text-[10px] uppercase tracking-widest opacity-20">Git_Repo</span>
-                    </div>
-                    <div class="project-body">
-                        <span class="tag ${config.tag}">${config.label}</span>
-                        <h3 class="project-title">${reponame}</h3>
-                        <p class="project-text">${repo.description || "Exploration technique sans description."}</p>
-                        <a href="${repo.html_url}" target="_blank" class="${url_style}">Voir le code →</a>
-                    </div>
-                </div>
-            `;
-            container.innerHTML += card;
-        });
-    } catch (error) {
-        console.error("Erreur lors de la récupération des projets GitHub", error);
-    }
-}
-
-// Lancer l'appel au chargement
-fetchGithubProjects();
-
-// NEURAL ANIMATION
-const canvas = document.getElementById('neural-canvas');
-const ctx = canvas.getContext('2d');
-
-let particles = [];
-const particleCount = 80;
-const connectionDistance = 150;
-
-// Redimensionnement
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
+/* --- NEURAL ANIMATION (Manager) --- */
 class Particle {
-    constructor() {
+    constructor(canvas) {
+        this.canvas = canvas;
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
         this.vx = (Math.random() - 0.5) * 0.5;
@@ -141,86 +15,211 @@ class Particle {
     update() {
         this.x += this.vx;
         this.y += this.vy;
-
-        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        if (this.x < 0 || this.x > this.canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > this.canvas.height) this.vy *= -1;
     }
 
-    draw() {
+    draw(ctx) {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#3b82f6';                                              // Blue
+        ctx.fillStyle = '#3b82f6';
         ctx.fill();
     }
 }
 
-function init() {
-    for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle());
+class ParticleManager {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.particles = [];
+        this.count = 80;
+        this.dist = 150;
+
+        window.addEventListener('resize', () => this.resize());
+        this.resize();
+        this.init();
+        this.animate();
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    init() {
+        for (let i = 0; i < this.count; i++) this.particles.push(new Particle(this.canvas));
+    }
+
+    animate() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.particles.forEach((p, i) => {
+            p.update();
+            p.draw(this.ctx);
+            for (let j = i + 1; j < this.particles.length; j++) {
+                const p2 = this.particles[j];
+                const d = Math.sqrt((p.x - p2.x)**2 + (p.y - p2.y)**2);
+                if (d < this.dist) {
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = `rgba(96, 165, 250, ${1 - d / this.dist})`;
+                    this.ctx.lineWidth = 0.5;
+                    this.ctx.moveTo(p.x, p.y);
+                    this.ctx.lineTo(p2.x, p2.y);
+                    this.ctx.stroke();
+                }
+            }
+        });
+        requestAnimationFrame(() => this.animate());
     }
 }
 
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* --- CURSOR MANAGER --- */
+function initCursor() {
+    const cursor = document.getElementById('custom-cursor');
+    if (!cursor) return;
 
-    for (let i = 0; i < particles.length; i++) {
-        particles[i].update();
-        particles[i].draw();
+    document.addEventListener('mousemove', (e) => {
+        cursor.style.left = `${e.clientX}px`;
+        cursor.style.top = `${e.clientY}px`;
+        cursor.style.opacity = "1";
+    });
 
-        for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+    document.addEventListener('mouseleave', () => cursor.style.opacity = "0");
 
-            if (distance < connectionDistance) {
-                ctx.beginPath();
-                ctx.strokeStyle = `rgba(96, 165, 250, ${1 - distance / connectionDistance})`;
-                ctx.lineWidth = 0.5;
-                ctx.moveTo(particles[i].x, particles[i].y);
-                ctx.lineTo(particles[j].x, particles[j].y);
-                ctx.stroke();
+    // Gestion centralisée du survol (Délégation d'événements)
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('a, button, .footer-handle, [role="button"]')) {
+            cursor.style.transform = 'translate(-50%, -50%) scale(2)';
+            cursor.style.backgroundColor = '#60a5fa';
+            cursor.style.boxShadow = '0 0 20px #60a5fa, 0 0 40px rgba(96, 165, 250, 0.6)';
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('a, button, .footer-handle, [role="button"]')) {
+            cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+            cursor.style.backgroundColor = '#3b82f6';
+            cursor.style.boxShadow = '0 0 15px #3b82f6, 0 0 30px rgba(59, 130, 246, 0.5)';
+        }
+    });
+}
+
+/* --- COMPONENTS LOADING & FOOTER --- */
+function initFooterLogic() {
+    const footer = document.getElementById('main-footer');
+    if (!footer) return;
+
+    const handleScroll = () => {
+        const scrollHeight = document.documentElement.scrollHeight;
+        const windowHeight = window.innerHeight;
+
+        if (scrollHeight > windowHeight) {
+            const atBottom = (windowHeight + window.scrollY) >= (scrollHeight - 50);
+            footer.classList.toggle('translate-y-full', !atBottom);
+            footer.classList.toggle('translate-y-[calc(100%-3rem)]', atBottom);
+        } else {                                                                // Don't hide if page is scrollable
+            footer.classList.remove('translate-y-full');
+            footer.classList.add('translate-y-[calc(100%-3rem)]');
+        }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    footer.addEventListener('mouseenter', () => footer.classList.replace('translate-y-[calc(100%-3rem)]', 'translate-y-0'));
+    footer.addEventListener('mouseleave', () => footer.classList.replace('translate-y-0', 'translate-y-[calc(100%-3rem)]'));
+}
+
+async function loadComponent(id, path) {
+    const isSubPage = window.location.pathname.includes('assets/pages/');       // Check file position in hierarchy
+    const prefix = isSubPage ? '../../' : '';
+
+    try {
+        const response = await fetch(prefix + path);
+        const text = await response.text();
+        const container = document.getElementById(id);                          // Add content to page
+
+        if (container) {
+            container.innerHTML = text;
+
+            if (isSubPage) {
+                container.querySelectorAll('a').forEach(link => {               // Update relative links
+                    const href = link.getAttribute('href');
+                    if (href && !href.startsWith('http') && !href.startsWith('#')) {
+                        link.setAttribute('href', prefix + href);
+                    }
+                });
+
+                container.querySelectorAll('img').forEach(img => {              // Update relative images
+                    const src = img.getAttribute('src');
+                    if (src && !src.startsWith('http')) { img.setAttribute('src', prefix + src); }
+                });
             }
         }
-    }
-    requestAnimationFrame(animate);
+
+        if (id === 'footer-placeholder') {
+            initFooterLogic();
+
+            if (document.documentElement.scrollHeight <= window.innerHeight) {  // Don't hide footer if page is scrollable
+                const footer = document.getElementById('main-footer');
+                if (footer) footer.classList.replace('translate-y-full', 'translate-y-[calc(100%-3rem)]');
+            }
+        }
+    } catch (e) { console.error(`Error loading ${path}:`, e); }
 }
 
-init();
-animate();
+/* --- GITHUB API --- */
+async function fetchGithubProjects() {
+    const container = document.getElementById('github-projects-container');
+    if (!container) return;
 
-// FOOTER
-const footer = document.getElementById('main-footer');
+    const username = 'OneShot666';
+    const forbidden = [username.toLowerCase(), 'ourofolios', 'portfolio'];
 
-window.addEventListener('scroll', () => {
-    // Distance parcourue + hauteur de la fenêtre
-    const scrollPosition = window.innerHeight + window.scrollY;
-    // Hauteur totale du contenu du site
-    const threshold = document.documentElement.scrollHeight - 50; // -50px de marge
+    try {
+        const res = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
+        if (res.status === 403) {
+            container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full text-center">
+                Quota d'API atteint. Réessayez plus tard.</p>`;
+            return;
+        }
+        const repos = await res.json();
+        if (!Array.isArray(repos)) return;
 
-    if (scrollPosition >= threshold) {
-        // On remonte le footer (translate-y-0 pour l'afficher)
-        footer.classList.remove('translate-y-full');
-        footer.classList.add('translate-y-[calc(100%-3rem)]');
-        // Note: 3rem correspond à h-12 (la barre de titre)
-    } else {
-        footer.classList.add('translate-y-full');
-        footer.classList.remove('translate-y-[calc(100%-3rem)]');
-    }
-});
+        container.innerHTML = repos
+            .filter(repo => !repo.fork && !forbidden.some(k => repo.name.toLowerCase().includes(k)))
+            .map(repo => {
+                const topics = repo.topics || [];
+                let label = "Informatique", tagClass = "tag-general";
 
-// Gestion spécifique du survol quand on est en bas
-footer.addEventListener('mouseenter', () => {
-    const scrollPosition = window.innerHeight + window.scrollY;
-    if (scrollPosition >= (document.documentElement.scrollHeight - 60)) {
-        footer.classList.remove('translate-y-[calc(100%-3rem)]');
-        footer.classList.add('translate-y-0');
-    }
-});
+                if (topics.includes('python')) { label = "Python"; tagClass = "tag-python"; }
+                else if (topics.includes('unreal-engine')) { label = "Unreal Engine"; tagClass = "tag-unreal"; }
+                else if (topics.includes('unity')) { label = "Unity"; tagClass = "tag-unity"; }
 
-footer.addEventListener('mouseleave', () => {
-    const scrollPosition = window.innerHeight + window.scrollY;
-    if (scrollPosition >= (document.documentElement.scrollHeight - 60)) {
-        footer.classList.add('translate-y-[calc(100%-3rem)]');
-        footer.classList.remove('translate-y-0');
-    }
+                const name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
+
+                return `
+                <div class="project-card group">
+                    <div class="project-media">
+                        <span class="text-[10px] uppercase tracking-widest opacity-20">Git_Repo</span>
+                    </div>
+                    <div class="project-body">
+                        <span class="tag ${tagClass}">${label}</span>
+                        <h3 class="project-title text-xl font-bold">${name}</h3>
+                        <p class="project-text text-sm text-gray-400 mt-2">${repo.description || "Exploration technique."}</p>
+                        <a href="${repo.html_url}" target="_blank"
+                            class="inline-block mt-4 text-xs text-blue-400 hover:text-white font-bold tracking-widest uppercase">Voir le code →</a>
+                    </div>
+                </div>`;
+            }).join('');
+    } catch (e) { console.error("GitHub Error:", e); }
+}
+
+/* --- INITIALIZATION --- */
+document.addEventListener('DOMContentLoaded', () => {
+    loadComponent('header-placeholder', 'assets/templates/header.html');
+    loadComponent('footer-placeholder', 'assets/templates/footer.html');
+
+    initCursor();                                                               // Launch modules
+    new ParticleManager('neural-canvas');
+    fetchGithubProjects();
 });
