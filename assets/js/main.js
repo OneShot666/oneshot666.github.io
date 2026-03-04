@@ -1,40 +1,105 @@
+// BASICS
+function titleCase(s) {
+    return s.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+
+// CURSOR
+const cursor = document.getElementById('custom-cursor');
+
+document.addEventListener('mousemove', (e) => {
+    // Met à jour la position
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+
+    // Si c'est le premier mouvement, on l'affiche
+    if (cursor.style.opacity === "0") {
+        cursor.style.opacity = "1";
+    }
+});
+
+// Cache la LED quand on sort de la fenêtre
+document.addEventListener('mouseleave', () => {
+    cursor.style.opacity = "0";
+});
+
+// La LED réapparaît quand on rentre
+document.addEventListener('mouseenter', () => {
+    cursor.style.opacity = "1";
+});
+
+// Effet interactif : la LED grossit sur les liens
+const links = document.querySelectorAll('a, button, .footer-handle');
+links.forEach(link => {
+    link.addEventListener('mouseenter', () => {
+        cursor.style.transform = 'translate(-50%, -50%) scale(1.5)';
+        cursor.style.backgroundColor = '#60a5fa'; // Bleu plus clair
+    });
+    link.addEventListener('mouseleave', () => {
+        cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+        cursor.style.backgroundColor = '#3b82f6';
+    });
+});
+
 // AUTOMATISATION
 async function fetchGithubProjects() {
-    const username = 'OneShot666'; // <--- À MODIFIER
+    const username = 'OneShot666';
     const container = document.getElementById('github-projects-container');
+
+    const forbiddenRepos = [username.toLowerCase(), 'ourofolios', 'portfolio'];
 
     try {
         const response = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
+
+        if (response.status === 403) {                                          // 403: Quota reach
+            container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full">
+                Quota d'API GitHub temporairement atteint. Réessayez dans un instant.
+            </p>`;
+            return;
+        }
+
         const repos = await response.json();
 
+        if (!Array.isArray(repos)) {                                            // Check repos if an array
+            console.error("Format de réponse GitHub invalide", repos);
+            return;
+        }
+
+        container.innerHTML = '';
+
         repos.forEach(repo => {
-            // On ignore les forks ou les dépôts sans description si on veut rester pro
-            if (repo.fork) return;
+            const isForbidden = forbiddenRepos.some(keyword => repo.name.toLowerCase().includes(keyword));
+            if (repo.fork || isForbidden) return;                               // Ignore forks and unwanted projects
 
             // Détection du type via les "topics" de GitHub
             const topics = repo.topics || [];
-            let config = { label: 'Informatique', color: 'yellow', bg: 'bg-yellow-950', text: 'text-yellow-300', hover: 'group-hover:text-yellow-400' };
+            let config = { tag: 'tag-general', label: 'Informatique', color: 'yellow', bg: 'bg-yellow-950', text: 'text-yellow-300',
+                hover: 'group-hover:text-yellow-400' };                         // Informatic project by default
 
             if (topics.includes('python')) {
-                config = { label: 'Python', color: 'red', bg: 'bg-red-950', text: 'text-red-300', hover: 'group-hover:text-red-400' };
+                config = { tag: 'tag-python', label: 'Python', color: 'red', bg: 'bg-red-950', text: 'text-red-300',
+                hover: 'group-hover:text-red-400' };
             } else if (topics.includes('unreal-engine')) {
-                config = { label: 'Unreal Engine', color: 'blue', bg: 'bg-blue-950', text: 'text-blue-300', hover: 'group-hover:text-blue-400' };
+                config = { tag: 'tag-unreal', label: 'Unreal Engine', color: 'blue', bg: 'bg-blue-950', text: 'text-blue-300',
+                hover: 'group-hover:text-blue-400' };
             } else if (topics.includes('unity')) {
-                config = { label: 'Unity', color: 'green', bg: 'bg-green-950', text: 'text-green-300', hover: 'group-hover:text-green-400' };
+                config = { tag: 'tag-unity', label: 'Unity', color: 'green', bg: 'bg-green-950', text: 'text-green-300',
+                hover: 'group-hover:text-green-400' };
             }
+
+            reponame = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
+            url_style = "inline-block mt-4 text-xs text-blue-400 hover:text-white transition-colors uppercase font-bold tracking-widest"
 
             const card = `
                 <div class="project-card rounded-2xl overflow-hidden group">
-                    <div class="h-48 bg-gray-800 flex items-center justify-center border-b border-gray-700">
-                        <span class="text-gray-500 font-mono text-xs">auto-generated-preview</span>
+                    <div class="project-media">
+                        <span class="text-[10px] uppercase tracking-widest opacity-20">Git_Repo</span>
                     </div>
-                    <div class="p-6">
-                        <span class="inline-block ${config.bg} ${config.text} text-[10px] px-3 py-1 rounded-full uppercase font-bold mb-3">
-                            ${config.label}
-                        </span>
-                        <h3 class="text-xl font-bold text-white ${config.hover} transition">${repo.name}</h3>
-                        <p class="text-gray-400 mt-2 text-sm h-12 overflow-hidden">${repo.description || "Pas de description disponible."}</p>
-                        <a href="${repo.html_url}" target="_blank" class="inline-block mt-4 text-xs text-blue-400 hover:underline">Voir le code →</a>
+                    <div class="project-body">
+                        <span class="tag ${config.tag}">${config.label}</span>
+                        <h3 class="project-title">${reponame}</h3>
+                        <p class="project-text">${repo.description || "Exploration technique sans description."}</p>
+                        <a href="${repo.html_url}" target="_blank" class="${url_style}">Voir le code →</a>
                     </div>
                 </div>
             `;
@@ -53,7 +118,7 @@ const canvas = document.getElementById('neural-canvas');
 const ctx = canvas.getContext('2d');
 
 let particles = [];
-const particleCount = 80; // Ajustez pour la densité
+const particleCount = 80;
 const connectionDistance = 150;
 
 // Redimensionnement
@@ -84,7 +149,7 @@ class Particle {
     draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#3b82f6'; // Bleu Tailwind
+        ctx.fillStyle = '#3b82f6';                                              // Blue
         ctx.fill();
     }
 }
