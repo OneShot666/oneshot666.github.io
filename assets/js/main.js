@@ -214,7 +214,101 @@ async function fetchGithubProjects() {
     } catch (e) { console.error("GitHub Error:", e); }
 }
 
+async function updateProjectsDropdown() {
+    const container = document.getElementById('dropdown-items-container');
+    if (!container) return;
+
+    // Liste des chemins possibles vers l'index selon où on se trouve
+    const pathsToTry = ['index.html', '../index.html', '../../index.html'];
+    let response;
+
+    try {
+        // On cherche quel chemin fonctionne
+        for (let path of pathsToTry) {
+            try {
+                const testRes = await fetch(path);
+                if (testRes.ok) {
+                    response = testRes;
+                    break;
+                }
+            } catch (e) { continue; }
+        }
+
+        if (!response) throw new Error('Index introuvable');
+
+        const htmlText = await response.text();
+        // 2. On transforme ce texte en un document HTML manipulable
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+        // 3. On récupère toutes les cartes de projets qui ont un titre
+        const projectCards = doc.querySelectorAll('.project-card');
+
+        if (projectCards.length === 0) {
+            container.innerHTML = '<div class="p-3 text-[10px] text-gray-500 uppercase">Aucun système détecté</div>';
+            return;
+        }
+
+        // Déterminer le chemin vers la racine selon où on se trouve
+        // Si l'URL contient "pages/", on doit remonter de deux niveaux pour atteindre index.html à la racine
+        const isSubPage = window.location.pathname.includes('pages/');
+        const rootPath = isSubPage ? '../../index.html' : 'index.html';
+
+        // 4. On génère dynamiquement le menu
+        container.innerHTML = Array.from(projectCards).map((card) => {
+            const title = card.querySelector('.project-title').innerText;
+            // On crée un ID unique si la carte n'en a pas, ou on utilise un ancrage générique
+            // RÉCUPÉRATION DU TAG (Correction ici)
+            // On récupère le texte du premier tag trouvé dans la carte
+            const tagElement = card.querySelector('.tag');
+            const tagName = tagElement ? tagElement.innerText.split('/')[0].trim().toLowerCase() : 'all';
+
+            return `
+                <a href="${rootPath}?filter=${tagName}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group/item">
+                    <div class="w-1 h-1 rounded-full bg-blue-500 group-hover/item:shadow-[0_0_8px_#3b82f6] transition-all"></div>
+                    <span class="text-sm text-gray-400 group-hover/item:text-white transition-colors">${title}</span>
+                </a>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error("Erreur de synchronisation du menu :", error);
+        container.innerHTML = '<div class="p-3 text-[10px] text-red-500 uppercase">Erreur de liaison synchronique</div>';
+    }
+}
+
+function applyProjectFilter() {
+    const params = new URLSearchParams(window.location.search);
+    const filter = params.get('filter'); // Récupère 'python', 'unreal', etc.
+    const cards = document.querySelectorAll('.project-card');
+
+    if (!filter || filter === 'all') {
+        // Si aucun filtre ou "tout voir", on montre tout
+        cards.forEach(card => {
+            card.style.display = 'block';
+            card.style.opacity = '1';
+        });
+        return;
+    }
+
+    cards.forEach(card => {
+        // On cherche le texte des tags à l'intérieur de la carte
+        const tags = card.querySelector('.tag').innerText.toLowerCase();
+
+        if (tags.includes(filter)) {
+            card.style.display = 'block';
+            // Petit effet de fondu
+            setTimeout(() => card.style.opacity = '1', 10);
+        } else {
+            // On cache les autres avec une transition
+            card.style.opacity = '0';
+            setTimeout(() => card.style.display = 'none', 500);
+        }
+    });
+}
+
 /* --- INITIALIZATION --- */
+window.addEventListener('DOMContentLoaded', applyProjectFilter);                // Launch at loading page
+window.addEventListener('popstate', applyProjectFilter);                        // Check url modifications (without reloading)
+
 document.addEventListener('DOMContentLoaded', () => {
     loadComponent('header-placeholder', 'assets/templates/header.html');
     loadComponent('footer-placeholder', 'assets/templates/footer.html');
@@ -222,4 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initCursor();                                                               // Launch modules
     new ParticleManager('neural-canvas');
     fetchGithubProjects();
+
+    setTimeout(updateProjectsDropdown, 500);
 });

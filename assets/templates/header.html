@@ -7,7 +7,28 @@
             </a>
 
             <div class="nav-links-container">
-                <a href="index.html#projets" class="nav-link">PROJETS</a>
+                <div class="nav-item-dropdown group relative">
+                    <a href="index.html#projets" class="nav-link flex items-center gap-1">
+                        Projets
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </a>
+
+                    <div id="projects-dropdown" class="absolute top-full left-0 w-64 pt-4 opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-500 var(--transition-smooth)">
+                        <div class="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl">
+                            <div id="dropdown-items-container" class="space-y-1">
+                                <div class="p-3 text-xs text-gray-500 italic">Chargement des systèmes...</div>
+                            </div>
+
+                            <div class="border-t border-white/5 mt-2 pt-2">
+                                <a href="index.html#projets" class="block p-3 text-[10px] font-bold uppercase tracking-widest text-blue-400 hover:text-white transition-colors">
+                                    Voir tous les projets  →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <a href="assets/pages/about.html" class="nav-link">À PROPOS</a>
                 <a href="mailto:oneshot666@email.com" class="btn-contact">CONTACT</a>
             </div>

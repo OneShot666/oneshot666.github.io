@@ -92,6 +92,16 @@ body::before {
     color: white;
 }
 
+.nav-item-dropdown:hover .nav-link {
+    color: var(--blue-led);
+}
+
+/* Effet de lueur sur le dropdown */
+#projects-dropdown .bg-gray-900\/95 {
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(59, 130, 246, 0.05);
+}
+
 .logo-img {
     height: 2rem; /* h-8 */
     transition: transform 0.8s var(--transition-smooth);
@@ -221,6 +231,16 @@ section[id] { scroll-margin-top: 5rem; }
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2.5rem;
+    justify-content: start;
+}
+
+.project-card {
+    /* Largeur fixe maximum pour éviter l'effet "étiré" */
+    max-width: 400px;
+    width: 100%;
+    /* On s'assure qu'elles restent centrées ou alignées selon ton choix */
+    margin: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
 }
 
 .project-media {
