@@ -210,6 +210,20 @@ section[id] { scroll-margin-top: 5rem; }
     box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.2);
 }
 
+/* Par défaut, c'est caché */
+.viewer-controls {
+    display: none;
+}
+
+/* On ne l'affiche au survol QUE si le script a validé plusieurs images */
+.project-card.has-multiple-images:hover .viewer-controls {
+    display: flex;
+}
+
+.project-card.has-multiple-images:hover .img-counter {
+    display: block;
+}
+
 .section-title {
     font-size: 2.25rem;
     font-weight: 800;

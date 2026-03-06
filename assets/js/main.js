@@ -198,10 +198,24 @@ async function fetchGithubProjects() {
                 const name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
 
                 return `
-                <div class="project-card group">
-                    <div class="project-media">
-                        <span class="text-[10px] uppercase tracking-widest opacity-20">Git_Repo</span>
+                <div class="project-card group" data-repo="${username}/${repo.name}">
+                    <div class="project-media relative h-48 w-full overflow-hidden bg-black/50">
+                        <img src="assets/img/icon-bg.png" class="project-viewer w-full h-full object-cover transition-opacity duration-500" alt="Aperçu">
+
+                        <div class="viewer-controls hidden absolute inset-0 pointer-events-none">
+                            <button onclick="changeImage(this, -1, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 p-2 rounded-full hover:bg-blue-500/50 text-white z-10">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+                            </button>
+                            <button onclick="changeImage(this, 1, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 p-2 rounded-full hover:bg-blue-500/50 text-white z-10">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                            </button>
+                        </div>
+
+                        <div class="img-counter hidden absolute bottom-2 right-2 px-2 py-0.5 bg-black/80 rounded text-[10px] font-mono text-blue-400 border border-white/10 shadow-lg">
+                            <span class="img-index">01</span>/<span class="img-total">01</span>
+                        </div>
                     </div>
+
                     <div class="project-body">
                         <span class="tag ${tagClass}">${label}</span>
                         <h3 class="project-title text-xl font-bold">${name}</h3>
@@ -262,12 +276,10 @@ async function updateProjectsDropdown() {
             const tagElement = card.querySelector('.tag');
             const tagName = tagElement ? tagElement.innerText.split('/')[0].trim().toLowerCase() : 'all';
 
-            return `
-                <a href="${rootPath}?filter=${tagName}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group/item">
+            return `<a href="${rootPath}?filter=${tagName}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group/item">
                     <div class="w-1 h-1 rounded-full bg-blue-500 group-hover/item:shadow-[0_0_8px_#3b82f6] transition-all"></div>
                     <span class="text-sm text-gray-400 group-hover/item:text-white transition-colors">${title}</span>
-                </a>
-            `;
+                </a>`;
         }).join('');
     } catch (error) {
         console.error("Erreur de synchronisation du menu :", error);
@@ -305,9 +317,77 @@ function applyProjectFilter() {
     });
 }
 
+// Stockage local des listes d'images pour chaque projet
+const projectLibrary = {};
+
+async function initProjectViewers() {
+    const cards = document.querySelectorAll('.project-card');
+
+    for (let card of cards) {
+        const repo = card.dataset.repo;
+        if (!repo) continue;
+
+        try {
+            // On interroge l'API GitHub pour le dossier /screenshots
+            const response = await fetch(`https://api.github.com/repos/${repo}/img/screenshots`);
+
+            if (response.ok) {
+                const data = await response.json();
+                // On ne garde que les fichiers images
+                const images = data
+                    .filter(file => /\.(png|jpg|jpeg|gif|webp)$/i.test(file.name))
+                    .map(file => file.download_url);
+
+                if (images.length > 1) { // SI PLUS D'UNE IMAGE
+                    projectLibrary[repo] = { images, current: 0 };
+
+                    // ON ACTIVE LES FONCTIONNALITÉS DE SLIDER
+                    card.classList.add('has-multiple-images');
+
+                    updateCardDisplay(card, repo);
+                } else if (images.length === 1) {
+                    // S'il n'y a qu'une image, on l'affiche juste, sans activer le slider
+                    const imgElement = card.querySelector('.project-viewer');
+                    imgElement.src = images[0];
+                }
+            }
+        } catch (e) {
+            console.warn(`Pas de screenshots pour ${repo}, fallback sur l'icône.`);
+        }
+    }
+}
+
+function updateCardDisplay(card, repo) {
+    const lib = projectLibrary[repo];
+    const imgElement = card.querySelector('.project-viewer');
+    const indexElement = card.querySelector('.img-index');
+    const totalElement = card.querySelector('.img-total');
+
+    imgElement.style.opacity = '0';
+    setTimeout(() => {
+        imgElement.src = lib.images[lib.current];
+        imgElement.style.opacity = '1';
+        indexElement.innerText = (lib.current + 1).toString().padStart(2, '0');
+        totalElement.innerText = lib.images.length.toString().padStart(2, '0');
+    }, 250);
+}
+
+window.changeImage = function(button, direction, event) {
+    event.stopPropagation();                                                    // Prevent clicking on link behind arrows
+    const card = button.closest('.project-card');
+    const repo = card.dataset.repo;
+    const lib = projectLibrary[repo];
+
+    if (!lib|| lib.images.length <= 1) return;
+
+    lib.current = (lib.current + direction + lib.images.length) % lib.images.length;    // Loop between images
+    updateCardDisplay(card, repo);
+};
+
 /* --- INITIALIZATION --- */
 window.addEventListener('DOMContentLoaded', applyProjectFilter);                // Launch at loading page
 window.addEventListener('popstate', applyProjectFilter);                        // Check url modifications (without reloading)
+document.addEventListener('DOMContentLoaded', initProjectViewers);              // Look for all projects images
 
 document.addEventListener('DOMContentLoaded', () => {
     loadComponent('header-placeholder', 'assets/templates/header.html');
