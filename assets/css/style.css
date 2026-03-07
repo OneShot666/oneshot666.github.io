@@ -210,18 +210,18 @@ section[id] { scroll-margin-top: 5rem; }
     box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.2);
 }
 
-/* Par défaut, c'est caché */
-.viewer-controls {
-    display: none;
+/* Cache les éléments par défaut */
+.viewer-controls, .img-counter {
+    display: none !important;
 }
 
-/* On ne l'affiche au survol QUE si le script a validé plusieurs images */
+/* Les affiche uniquement si la carte a la classe et est survolée */
 .project-card.has-multiple-images:hover .viewer-controls {
-    display: flex;
+    display: block !important; /* On utilise block car les boutons sont en absolute */
 }
 
 .project-card.has-multiple-images:hover .img-counter {
-    display: block;
+    display: block !important;
 }
 
 .section-title {

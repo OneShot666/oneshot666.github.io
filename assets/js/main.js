@@ -198,15 +198,15 @@ async function fetchGithubProjects() {
                 const name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
 
                 return `
-                <div class="project-card group" data-repo="${username}/${repo.name}">
+                <div class="project-card group" data-repo="${username}/${repo.name}" data-img-path="img/screenshots">
                     <div class="project-media relative h-48 w-full overflow-hidden bg-black/50">
                         <img src="assets/img/icon-bg.png" class="project-viewer w-full h-full object-cover transition-opacity duration-500" alt="Aperçu">
 
-                        <div class="viewer-controls hidden absolute inset-0 pointer-events-none">
-                            <button onclick="changeImage(this, -1, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 p-2 rounded-full hover:bg-blue-500/50 text-white z-10">
+                        <div class="viewer-controls hidden absolute inset-0 z-30">
+                            <button onclick="changeImage(this, -1, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
                             </button>
-                            <button onclick="changeImage(this, 1, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 p-2 rounded-full hover:bg-blue-500/50 text-white z-10">
+                            <button onclick="changeImage(this, 1, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
                             </button>
                         </div>
@@ -225,6 +225,8 @@ async function fetchGithubProjects() {
                     </div>
                 </div>`;
             }).join('');
+
+        initProjectViewers();                                                   // Look for all projects image
     } catch (e) { console.error("GitHub Error:", e); }
 }
 
@@ -329,7 +331,8 @@ async function initProjectViewers() {
 
         try {
             // On interroge l'API GitHub pour le dossier /screenshots
-            const response = await fetch(`https://api.github.com/repos/${repo}/img/screenshots`);
+            const path = card.dataset.imgPath || 'screenshots'; // 'screenshots' par défaut
+            const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`);
 
             if (response.ok) {
                 const data = await response.json();
@@ -373,10 +376,13 @@ function updateCardDisplay(card, repo) {
 }
 
 window.changeImage = function(button, direction, event) {
-    event.stopPropagation();                                                    // Prevent clicking on link behind arrows
+    if (event) event.stopPropagation();                                         // Prevent clicking on link behind arrows
+
     const card = button.closest('.project-card');
     const repo = card.dataset.repo;
     const lib = projectLibrary[repo];
+
+    console.log("Clic détecté pour:", repo, "Direction:", direction);           // !!!
 
     if (!lib|| lib.images.length <= 1) return;
 
@@ -387,7 +393,6 @@ window.changeImage = function(button, direction, event) {
 /* --- INITIALIZATION --- */
 window.addEventListener('DOMContentLoaded', applyProjectFilter);                // Launch at loading page
 window.addEventListener('popstate', applyProjectFilter);                        // Check url modifications (without reloading)
-document.addEventListener('DOMContentLoaded', initProjectViewers);              // Look for all projects images
 
 document.addEventListener('DOMContentLoaded', () => {
     loadComponent('header-placeholder', 'assets/templates/header.html');
