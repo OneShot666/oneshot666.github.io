@@ -1,6 +1,12 @@
 /* --- UTILS --- */
 const titleCase = (s) => s.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
+// Fonction pour précharger une image en mémoire
+const preloadImage = (url) => {
+    const img = new Image();
+    img.src = url;
+};
+
 /* --- NEURAL ANIMATION (Manager) --- */
 class Particle {
     constructor(canvas) {
@@ -185,21 +191,38 @@ async function fetchGithubProjects() {
         const repos = await res.json();
         if (!Array.isArray(repos)) return;
 
+        // --- TRI PAR STARS (DÉCROISSANT) ---
+        repos.sort((a, b) => b.stargazers_count - a.stargazers_count);
+
         container.innerHTML = repos
             .filter(repo => !repo.fork && !forbidden.some(k => repo.name.toLowerCase().includes(k)))
             .map(repo => {
-                const topics = repo.topics || [];
+                const name = repo.name.toLowerCase();
+                const description = (repo.description || "").toLowerCase();
+                const language = (repo.language || "").toLowerCase();
+                const topics = repo.topics.map(t => t.toLowerCase());
+
                 let label = "Informatique", tagClass = "tag-general";
 
-                if (topics.includes('python')) { label = "Python"; tagClass = "tag-python"; }
-                else if (topics.includes('unreal-engine')) { label = "Unreal Engine"; tagClass = "tag-unreal"; }
-                else if (topics.includes('unity')) { label = "Unity"; tagClass = "tag-unity"; }
+                if (topics.includes('unity') || topics.includes('unity3d') || name.includes('unity') || description.includes('unity')) {
+                    label = "Unity"; tagClass = "tag-unity";
+                } else if (topics.includes('unreal-engine') || topics.includes('ue4') || topics.includes('ue5') || name.includes('unreal')) {
+                    label = "Unreal Engine"; tagClass = "tag-unreal";
+                } else if (language === 'python' || name.includes('py-') || name.includes('-py') || description.includes('python')) {
+                    label = "Python"; tagClass = "tag-python";
+                } else if (topics.includes('website') || language === 'javascript' || language === 'java' || language === 'php' || language === 'html') {
+                    label = "Web Dev"; tagClass = "tag-general";
+                }
 
-                const name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
+                // Petit bonus : afficher le nombre de stars dans le HTML si tu le souhaites
+                const starCount = repo.stargazers_count > 0 ?
+                    `<span class="text-yellow-500 text-[10px] ml-2">★ ${repo.stargazers_count}</span>` : '';
+
+                const r_name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
 
                 return `
                 <div class="project-card group" data-repo="${username}/${repo.name}" data-img-path="img/screenshots">
-                    <div class="project-media relative h-48 w-full overflow-hidden bg-black/50">
+                    <div class="project-media loading relative h-48 w-full overflow-hidden bg-black/50">
                         <img src="assets/img/icon-bg.png" class="project-viewer w-full h-full object-cover transition-opacity duration-500" alt="Aperçu">
 
                         <div class="viewer-controls hidden absolute inset-0 z-30">
@@ -218,7 +241,7 @@ async function fetchGithubProjects() {
 
                     <div class="project-body">
                         <span class="tag ${tagClass}">${label}</span>
-                        <h3 class="project-title text-xl font-bold">${name}</h3>
+                        <h3 class="project-title text-xl font-bold">${r_name} ${starCount}</h3>
                         <p class="project-text text-sm text-gray-400 mt-2">${repo.description || "Exploration technique."}</p>
                         <a href="${repo.html_url}" target="_blank"
                             class="inline-block mt-4 text-xs text-blue-400 hover:text-white font-bold tracking-widest uppercase">Voir le code →</a>
@@ -321,43 +344,100 @@ function applyProjectFilter() {
 
 // Stockage local des listes d'images pour chaque projet
 const projectLibrary = {};
+// Variable globale pour les intervalles d'auto-play
+const autoPlayIntervals = {};
 
 async function initProjectViewers() {
     const cards = document.querySelectorAll('.project-card');
 
-    for (let card of cards) {
+    for (const [i, card] of cards.entries()) {
         const repo = card.dataset.repo;
         if (!repo) continue;
 
+        // 1. Vérifier si on a déjà les données en cache
+        const cachedData = localStorage.getItem(`cache_${repo}`);
+        if (cachedData) {
+            const { images, timestamp } = JSON.parse(cachedData);
+            const isExpired = Date.now() - timestamp > 3600000; // Cache expire après 1h
+
+            if (!isExpired) {
+                applyImagesToCard(card, repo, images, i);
+                continue; // On passe au projet suivant sans faire de fetch
+            }
+        }
+
         try {
-            // On interroge l'API GitHub pour le dossier /screenshots
-            const path = card.dataset.imgPath || 'screenshots'; // 'screenshots' par défaut
+            const path = card.dataset.imgPath || 'screenshots';
             const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`);
 
             if (response.ok) {
                 const data = await response.json();
-                // On ne garde que les fichiers images
                 const images = data
                     .filter(file => /\.(png|jpg|jpeg|gif|webp)$/i.test(file.name))
                     .map(file => file.download_url);
 
-                if (images.length > 1) { // SI PLUS D'UNE IMAGE
-                    projectLibrary[repo] = { images, current: 0 };
+                if (images.length > 0) {
+                    // 2. Sauvegarder dans le localStorage
+                    localStorage.setItem(`cache_${repo}`, JSON.stringify({
+                        images,
+                        timestamp: Date.now()
+                    }));
 
-                    // ON ACTIVE LES FONCTIONNALITÉS DE SLIDER
-                    card.classList.add('has-multiple-images');
-
-                    updateCardDisplay(card, repo);
-                } else if (images.length === 1) {
-                    // S'il n'y a qu'une image, on l'affiche juste, sans activer le slider
-                    const imgElement = card.querySelector('.project-viewer');
-                    imgElement.src = images[0];
+                    applyImagesToCard(card, repo, images, i);
+                } else {
+                    card.querySelector('.project-media').classList.remove('loading');
                 }
             }
         } catch (e) {
-            console.warn(`Pas de screenshots pour ${repo}, fallback sur l'icône.`);
+            card.querySelector('.project-media').classList.remove('loading');
         }
     }
+}
+
+// Petite fonction pour éviter de répéter le code
+function applyImagesToCard(card, repo, images, index) {
+    card.querySelector('.project-media').classList.remove('loading');
+    projectLibrary[repo] = { images, current: 0 };
+    images.forEach(url => preloadImage(url));
+
+    if (images.length > 1) {
+        card.classList.add('has-multiple-images');
+        updateCardDisplay(card, repo);
+        // 3. Lancement de l'Auto-play (toutes les 2 secondes pour laisser le temps de voir)
+        startAutoPlay(card, repo, index);
+        // Arrêter l'auto-play si la souris survole pour laisser le contrôle manuel
+        card.addEventListener('mouseenter', () => stopAutoPlay(repo));
+        card.addEventListener('mouseleave', () => startAutoPlay(card, repo, index));
+    } else {
+        card.querySelector('.project-viewer').src = images[0];
+    }
+}
+
+function startAutoPlay(card, repo, index) {
+    if (autoPlayIntervals[repo]) return;
+
+    // Calcul du décalage initial : 0.5s * index de la carte
+    const staggerDelay = index * 500;
+
+    // On attend le décalage, puis on lance l'intervalle régulier
+    setTimeout(() => {
+        autoPlayIntervals[repo] = setInterval(() => {
+            const lib = projectLibrary[repo];
+            lib.current = (lib.current + 1) % lib.images.length;
+            updateCardDisplay(card, repo);
+        }, 4000); // Intervalle de 4s
+
+        // Optionnel : Forcer un premier changement immédiat après le stagger
+        const lib = projectLibrary[repo];
+        lib.current = (lib.current + 1) % lib.images.length;
+        updateCardDisplay(card, repo);
+
+    }, staggerDelay);
+}
+
+function stopAutoPlay(repo) {
+    clearInterval(autoPlayIntervals[repo]);
+    delete autoPlayIntervals[repo];
 }
 
 function updateCardDisplay(card, repo) {
@@ -367,12 +447,26 @@ function updateCardDisplay(card, repo) {
     const totalElement = card.querySelector('.img-total');
 
     imgElement.style.opacity = '0';
+
+    // ÉTAPE 2 : Attendre la fin du fondu (0.8s défini dans le CSS)
     setTimeout(() => {
+        // Changer la source pendant que c'est invisible
         imgElement.src = lib.images[lib.current];
-        imgElement.style.opacity = '1';
-        indexElement.innerText = (lib.current + 1).toString().padStart(2, '0');
-        totalElement.innerText = lib.images.length.toString().padStart(2, '0');
-    }, 250);
+
+        // Mettre à jour les compteurs
+        if(indexElement) indexElement.innerText = (lib.current + 1).toString().padStart(2, '0');
+        if(totalElement) totalElement.innerText = lib.images.length.toString().padStart(2, '0');
+
+        // ÉTAPE 3 : Une fois l'image chargée, relancer le fondu entrant (Fade-in)
+        imgElement.onload = () => {
+            imgElement.style.opacity = '1';
+        };
+
+        // Sécurité si l'image est déjà en cache et que onload ne déclenche pas
+        if (imgElement.complete) {
+            imgElement.style.opacity = '1';
+        }
+    }, 800);
 }
 
 window.changeImage = function(button, direction, event) {
@@ -381,8 +475,6 @@ window.changeImage = function(button, direction, event) {
     const card = button.closest('.project-card');
     const repo = card.dataset.repo;
     const lib = projectLibrary[repo];
-
-    console.log("Clic détecté pour:", repo, "Direction:", direction);           // !!!
 
     if (!lib|| lib.images.length <= 1) return;
 

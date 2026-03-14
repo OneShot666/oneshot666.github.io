@@ -5,8 +5,11 @@
     --bg-dark: #111827;
     --blue-led: #3b82f6;
     --blue-hover: #60a5fa;
+    /* --glass-bg: rgba(31, 41, 55, 0.6); */
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --neon-cyan: #00f2ff;
+    --neon-green: #00ffaa;
     --transition-smooth: cubic-bezier(0.16, 1, 0.3, 1);
-    --glass-bg: rgba(31, 41, 55, 0.6);
 }
 
 * { cursor: none !important; }
@@ -38,15 +41,18 @@ body::before {
 /* ==========================================================================
    2. INTERFACE (CURSOR, SCROLLBAR)
    ========================================================================== */
+/* On change aussi la lueur du curseur pour correspondre au thème */
 #custom-cursor {
     width: 12px; height: 12px;
-    background-color: var(--blue-led);
+    /* background-color: var(--blue-led); */
+    background-color: var(--neon-cyan);
     border-radius: 50%;
     position: fixed;
     pointer-events: none;
     z-index: 9999;
     transform: translate(-50%, -50%);
-    box-shadow: 0 0 15px var(--blue-led), 0 0 30px var(--blue-led);
+    /* box-shadow: 0 0 15px var(--blue-led), 0 0 30px var(--blue-led); */
+    box-shadow: 0 0 15px var(--neon-cyan), 0 0 30px rgba(0, 255, 170, 0.5);
     transition: transform 0.1s ease-out, opacity 0.3s ease-in-out;
     opacity: 0;
 }
@@ -201,7 +207,13 @@ section[id] { scroll-margin-top: 5rem; }
     background-color: var(--glass-bg);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Largeur fixe maximum pour éviter l'effet "étiré" */
+    max-width: 400px;
+    width: 100%;
+    /* On s'assure qu'elles restent centrées ou alignées selon ton choix */
+    margin: 0;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
 }
 
 .project-card:hover {
@@ -228,7 +240,8 @@ section[id] { scroll-margin-top: 5rem; }
     font-size: 2.25rem;
     font-weight: 800;
     margin-bottom: 4rem;
-    border-left: 8px solid #2563eb;
+    /* border-left: 8px solid #2563eb; */
+    border-left: 8px solid var(--neon-cyan);
     padding-left: 1.5rem;
 }
 
@@ -236,7 +249,8 @@ section[id] { scroll-margin-top: 5rem; }
     font-size: 1.875rem;
     font-weight: 700;
     margin-bottom: 2.5rem;
-    border-left: 4px solid #2563eb;
+    /* border-left: 4px solid #2563eb; */
+    border-left: 4px solid var(--neon-cyan);
     padding-left: 1rem;
 }
 
@@ -248,13 +262,10 @@ section[id] { scroll-margin-top: 5rem; }
     justify-content: start;
 }
 
-.project-card {
-    /* Largeur fixe maximum pour éviter l'effet "étiré" */
-    max-width: 400px;
-    width: 100%;
-    /* On s'assure qu'elles restent centrées ou alignées selon ton choix */
-    margin: 0;
-    transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+.project-viewer {
+    opacity: 1;
+    transition: opacity 0.8s ease-in-out; /* Contrôle la vitesse du fondu */
+    background-color: #050a0f; /* Même couleur que le fond pour éviter les flashs */
 }
 
 .project-media {
@@ -265,6 +276,30 @@ section[id] { scroll-margin-top: 5rem; }
     justify-content: center;
     font-style: italic;
     color: #4b5563;
+}
+
+.project-media.loading {
+    position: relative;
+    background-color: #0a0a0a !important;
+    overflow: hidden;
+}
+
+.project-media.loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(59, 130, 246, 0.1),
+        transparent
+    );
+    animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+    100% { transform: translateX(100%); }
 }
 
 .project-body { padding: 1.5rem; }
@@ -316,7 +351,8 @@ section[id] { scroll-margin-top: 5rem; }
    6. ANIMATIONS & EFFETS
    ========================================================================== */
 .gradient-text {
-    background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+    /* background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6); */
+    background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
