@@ -1,5 +1,7 @@
 /* --- UTILS --- */
 const titleCase = (s) => s.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+let modalAutoPlayInterval = null;
+let currentOpenRepo = null; // Pour savoir quel projet est ouvert
 
 // Fonction pour précharger une image en mémoire
 const preloadImage = (url) => {
@@ -108,6 +110,15 @@ function initCursor() {
             cursor.style.boxShadow = '0 0 15px #3b82f6, 0 0 30px rgba(59, 130, 246, 0.5)';
         }
     });
+
+    document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('project-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+            if (e.key === "ArrowLeft") navigateProject(-1);
+            if (e.key === "ArrowRight") navigateProject(1);
+            if (e.key === "Escape") closeModal();
+        }
+    });
 }
 
 /* --- COMPONENTS LOADING & FOOTER --- */
@@ -174,83 +185,148 @@ async function loadComponent(id, path) {
 }
 
 /* --- GITHUB API --- */
+function updateServerStatus(state) {
+    const ping = document.getElementById('status-ping');
+    const dot = document.getElementById('status-dot');
+    const text = document.getElementById('status-text');
+
+    if (!ping || !dot || !text) return;
+
+    // Réinitialisation des classes de couleur
+    const colors = ['bg-green-400', 'bg-green-500', 'bg-orange-400', 'bg-orange-500', 'bg-red-400', 'bg-red-500'];
+    ping.classList.remove(...colors);
+    dot.classList.remove(...colors);
+
+    if (state === 'online') {
+        ping.classList.add('bg-green-400');
+        dot.classList.add('bg-green-500');
+        text.innerText = "Server Status: Online";
+        text.classList.replace('text-orange-400', 'text-gray-300');
+        text.classList.replace('text-red-400', 'text-gray-300');
+    } else if (state === 'limited') { // Pour la 403 (Quota)
+        ping.classList.add('bg-orange-400');
+        dot.classList.add('bg-orange-500');
+        text.innerText = "Server Status: Rate Limited";
+        text.classList.add('text-orange-400');
+    } else if (state === 'offline') { // Pour les erreurs critiques
+        ping.classList.add('bg-red-400');
+        dot.classList.add('bg-red-500');
+        text.innerText = "Server Status: Connection Error";
+        text.classList.add('text-red-400');
+    }
+}
+
 async function fetchGithubProjects() {
     const container = document.getElementById('github-projects-container');
     if (!container) return;
 
     const username = 'OneShot666';
-    const forbidden = [username.toLowerCase(), 'ourofolios', 'portfolio'];
+    const cacheKey = `cache_repos_list`;
 
     try {
         const res = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
+
         if (res.status === 403) {
-            container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full text-center">
-                Quota d'API atteint. Réessayez plus tard.</p>`;
-            return;
+            updateServerStatus('limited'); // On passe en ORANGE
+            throw new Error("Quota atteint"); // On force le passage dans le bloc "catch"
         }
+
+        if (!res.ok) throw new Error("Erreur serveur");
+
+        updateServerStatus('online'); // On passe en VERT
+
         const repos = await res.json();
         if (!Array.isArray(repos)) return;
+        // Sauvegarder la liste brute en cache pour la prochaine fois
+        localStorage.setItem(cacheKey, JSON.stringify({ data: repos, timestamp: Date.now() }));
 
-        // --- TRI PAR STARS (DÉCROISSANT) ---
-        repos.sort((a, b) => b.stargazers_count - a.stargazers_count);
+        renderProjects(repos); // On appelle une fonction qui dessine les cartes
 
-        container.innerHTML = repos
-            .filter(repo => !repo.fork && !forbidden.some(k => repo.name.toLowerCase().includes(k)))
-            .map(repo => {
-                const name = repo.name.toLowerCase();
-                const description = (repo.description || "").toLowerCase();
-                const language = (repo.language || "").toLowerCase();
-                const topics = repo.topics.map(t => t.toLowerCase());
+    } catch (e) {
+        // Si c'est une erreur de connexion (pas de 403)
+        if (!e.message.includes("Quota")) {
+            updateServerStatus('offline'); // On passe en ROUGE
+        }
 
-                let label = "Informatique", tagClass = "tag-general";
+        console.warn("GitHub API indisponible, tentative de chargement du cache...");
+        const cached = localStorage.getItem(cacheKey);
 
-                if (topics.includes('unity') || topics.includes('unity3d') || name.includes('unity') || description.includes('unity')) {
-                    label = "Unity"; tagClass = "tag-unity";
-                } else if (topics.includes('unreal-engine') || topics.includes('ue4') || topics.includes('ue5') || name.includes('unreal')) {
-                    label = "Unreal Engine"; tagClass = "tag-unreal";
-                } else if (language === 'python' || name.includes('py-') || name.includes('-py') || description.includes('python')) {
-                    label = "Python"; tagClass = "tag-python";
-                } else if (topics.includes('website') || language === 'javascript' || language === 'java' || language === 'php' || language === 'html') {
-                    label = "Web Dev"; tagClass = "tag-general";
-                }
+        if (cached) {
+            const { data } = JSON.parse(cached);
+            renderProjects(data);
+        } else {
+            container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full text-center">
+                Premier chargement impossible (Quota API atteint). Réessayez dans une heure.</p>`;
+        }
+    }
+}
 
-                // Petit bonus : afficher le nombre de stars dans le HTML si tu le souhaites
-                const starCount = repo.stargazers_count > 0 ?
-                    `<span class="text-yellow-500 text-[10px] ml-2">★ ${repo.stargazers_count}</span>` : '';
+// On déporte la création du HTML ici pour plus de clarté
+function renderProjects(repos) {
+    const container = document.getElementById('github-projects-container');
+    const username = 'OneShot666';
+    const forbidden = [username.toLowerCase(), 'ourofolios', 'portfolio'];
 
-                const r_name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
+    // --- TRI PAR STARS ---
+    repos.sort((a, b) => b.stargazers_count - a.stargazers_count);
 
-                return `
-                <div class="project-card group" data-repo="${username}/${repo.name}" data-img-path="img/screenshots">
-                    <div class="project-media loading relative h-48 w-full overflow-hidden bg-black/50">
-                        <img src="assets/img/icon-bg.png" class="project-viewer w-full h-full object-cover transition-opacity duration-500" alt="Aperçu">
+    container.innerHTML = repos
+        .filter(repo => !repo.fork && !forbidden.some(k => repo.name.toLowerCase().includes(k)))
+        .map(repo => {
+            const name = repo.name.toLowerCase();
+            const description = (repo.description || "").toLowerCase();
+            const language = (repo.language || "").toLowerCase();
+            const topics = repo.topics.map(t => t.toLowerCase());
 
-                        <div class="viewer-controls hidden absolute inset-0 z-30">
-                            <button onclick="changeImage(this, -1, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-                            </button>
-                            <button onclick="changeImage(this, 1, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
-                            </button>
-                        </div>
+            let label = "Informatique", tagClass = "tag-general";
 
-                        <div class="img-counter hidden absolute bottom-2 right-2 px-2 py-0.5 bg-black/80 rounded text-[10px] font-mono text-blue-400 border border-white/10 shadow-lg">
-                            <span class="img-index">01</span>/<span class="img-total">01</span>
-                        </div>
+            if (topics.includes('unity') || topics.includes('unity3d') || name.includes('unity') || description.includes('unity')) {
+                label = "Unity"; tagClass = "tag-unity";
+            } else if (topics.includes('unreal-engine') || topics.includes('ue4') || topics.includes('ue5') || name.includes('unreal')) {
+                label = "Unreal Engine"; tagClass = "tag-unreal";
+            } else if (language === 'python' || name.includes('py-') || name.includes('-py') || description.includes('python')) {
+                label = "Python"; tagClass = "tag-python";
+            } else if (topics.includes('website') || language === 'javascript' || language === 'java' || language === 'php' || language === 'html') {
+                label = "Web Dev"; tagClass = "tag-general";
+            }
+
+            // Petit bonus : afficher le nombre de stars dans le HTML si tu le souhaites
+            const starCount = repo.stargazers_count > 0 ?
+                `<span class="text-yellow-500 text-[10px] ml-2">★ ${repo.stargazers_count}</span>` : '';
+
+            const r_name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
+
+            return `
+            <div class="project-card group cursor-pointer" onclick="openProjectModal('${username}/${repo.name}')"
+            data-repo="${username}/${repo.name}" data-title="${r_name}" data-stars="${repo.stargazers_count}" data-img-path="img/screenshots">
+                <div class="project-media loading relative h-48 w-full overflow-hidden bg-black/50">
+                    <img src="assets/img/icon-bg.png" class="project-viewer w-full h-full object-cover transition-opacity duration-500" alt="Aperçu">
+
+                    <div class="viewer-controls hidden absolute inset-0 z-30">
+                        <button onclick="changeImage(this, -1, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button onclick="changeImage(this, 1, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                        </button>
                     </div>
 
-                    <div class="project-body">
-                        <span class="tag ${tagClass}">${label}</span>
-                        <h3 class="project-title text-xl font-bold">${r_name} ${starCount}</h3>
-                        <p class="project-text text-sm text-gray-400 mt-2">${repo.description || "Exploration technique."}</p>
-                        <a href="${repo.html_url}" target="_blank"
-                            class="inline-block mt-4 text-xs text-blue-400 hover:text-white font-bold tracking-widest uppercase">Voir le code →</a>
+                    <div class="img-counter hidden absolute bottom-2 right-2 px-2 py-0.5 bg-black/80 rounded text-[10px] font-mono text-blue-400 border border-white/10 shadow-lg">
+                        <span class="img-index">01</span>/<span class="img-total">01</span>
                     </div>
-                </div>`;
-            }).join('');
+                </div>
 
-        initProjectViewers();                                                   // Look for all projects image
-    } catch (e) { console.error("GitHub Error:", e); }
+                <div class="project-body">
+                    <span class="tag ${tagClass}">${label}</span>
+                    <h3 class="project-title text-xl font-bold">${r_name} ${starCount}</h3>
+                    <p class="project-text text-sm text-gray-400 mt-2">${repo.description || "Exploration technique."}</p>
+                    <a href="${repo.html_url}" target="_blank"
+                        class="inline-block mt-4 text-xs text-blue-400 hover:text-white font-bold tracking-widest uppercase">Voir le code →</a>
+                </div>
+            </div>`;
+        }).join('');
+
+    initProjectViewers();                                                   // Look for all projects image
 }
 
 async function updateProjectsDropdown() {
@@ -356,6 +432,8 @@ async function initProjectViewers() {
 
         // 1. Vérifier si on a déjà les données en cache
         const cachedData = localStorage.getItem(`cache_${repo}`);
+        let imagesToUse = null;
+
         if (cachedData) {
             const { images, timestamp } = JSON.parse(cachedData);
             const isExpired = Date.now() - timestamp > 3600000; // Cache expire après 1h
@@ -363,6 +441,9 @@ async function initProjectViewers() {
             if (!isExpired) {
                 applyImagesToCard(card, repo, images, i);
                 continue; // On passe au projet suivant sans faire de fetch
+            } else {
+                // Le cache est expiré, mais on le garde au cas où le fetch échoue !
+                imagesToUse = images;
             }
         }
 
@@ -374,7 +455,11 @@ async function initProjectViewers() {
                 const data = await response.json();
                 const images = data
                     .filter(file => /\.(png|jpg|jpeg|gif|webp)$/i.test(file.name))
-                    .map(file => file.download_url);
+                    .map(file => {
+                        // ON AJOUTE L'ANTI-COLLISION ICI
+                        const separator = file.download_url.includes('?') ? '&' : '?';
+                        return `${file.download_url}${separator}repo=${repo.replace('/', '_')}`;
+                    });
 
                 if (images.length > 0) {
                     // 2. Sauvegarder dans le localStorage
@@ -387,9 +472,14 @@ async function initProjectViewers() {
                 } else {
                     card.querySelector('.project-media').classList.remove('loading');
                 }
+            } else if (imagesToUse) {
+                // SI ERREUR (403 par exemple), mais qu'on a un vieux cache : on l'utilise !
+                console.log(`Fallback cache pour ${repo}`); // !!!
+                applyImagesToCard(card, repo, imagesToUse, i);
             }
         } catch (e) {
-            card.querySelector('.project-media').classList.remove('loading');
+//            card.querySelector('.project-media').classList.remove('loading');
+            if (imagesToUse) applyImagesToCard(card, repo, imagesToUse, i);
         }
     }
 }
@@ -481,6 +571,212 @@ window.changeImage = function(button, direction, event) {
     lib.current = (lib.current + direction + lib.images.length) % lib.images.length;    // Loop between images
     updateCardDisplay(card, repo);
 };
+
+/* --- DETAIL CARD MODAL --- */
+async function openProjectModal(repoName) {
+    currentOpenRepo = repoName; // On stocke le nom du repo ouvert
+    stopModalAutoPlay(); // Sécurité : on arrête l'ancien défilement s'il y en avait un
+
+    // --- RÉINITIALISATION (Nettoyage de l'ancien contenu) ---
+    const readmeContainer = document.getElementById('modal-readme');
+    const readmeWrapper = document.getElementById('modal-readme-container');
+    if (readmeContainer) readmeContainer.innerHTML = ''; // On vide le texte
+    if (readmeWrapper) readmeWrapper.classList.add('hidden'); // On cache le bloc README par défaut
+
+    const lib = projectLibrary[repoName] || { images: ['assets/img/icon-bg.png'] };
+    const card = document.querySelector(`[data-repo="${repoName}"]`);
+    if (!card) return;
+
+    const modal = document.getElementById('project-modal');
+
+    // Initialisation de l'index interne pour la modal
+    lib.currentModalIndex = 0;
+
+    // Remplissage des textes (Titre, Desc, etc.)
+    document.getElementById('modal-title').innerText = card.dataset.title;
+    document.getElementById('modal-description').innerText = card.querySelector('.project-text').innerText;
+    document.getElementById('modal-link').href = card.querySelector('a').href;
+
+    const tagContainer = document.getElementById('modal-tag');
+    tagContainer.innerHTML = '';
+    tagContainer.appendChild(card.querySelector('.tag').cloneNode(true));
+
+    // Gestion des étoiles
+    const stars = parseInt(card.dataset.stars || 0);
+    const starsContainer = document.getElementById('modal-stars-container');
+    if (stars > 0) {
+        document.getElementById('modal-stars').innerText = stars;
+        starsContainer.classList.remove('hidden');
+    } else {
+        starsContainer.classList.add('hidden');
+    }
+
+    // Galerie d'images
+    const mainImg = document.getElementById('modal-main-img');
+    const thumbContainer = document.getElementById('modal-thumbnails');
+    mainImg.src = lib.images[0];
+    thumbContainer.innerHTML = '';
+
+    if (lib.images.length > 1) {
+        lib.images.forEach((imgUrl, idx) => {
+            const thumb = document.createElement('img');
+            thumb.src = imgUrl;
+            thumb.className = `w-16 h-12 object-cover rounded-md cursor-pointer border-2 border-transparent hover:border-blue-500 transition-all ${idx === 0 ? 'border-blue-500 opacity-100' : 'opacity-50 hover:opacity-100'}`;
+
+            thumb.onclick = () => {
+                stopModalAutoPlay(); // On arrête l'auto-play si l'utilisateur clique
+                changeModalImage(repoName, idx);
+            };
+            thumbContainer.appendChild(thumb);
+        });
+
+        // LANCEMENT DE L'AUTO-PLAY DE LA MODAL
+        startModalAutoPlay(repoName);
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // ... (Reste de ton code pour le README avec le cache)
+    loadModalReadme(repoName); // J'ai factorisé pour la clarté
+}
+
+function startModalAutoPlay(repoName) {
+    stopModalAutoPlay();
+    const lib = projectLibrary[repoName];
+
+    modalAutoPlayInterval = setInterval(() => {
+        lib.currentModalIndex = (lib.currentModalIndex + 1) % lib.images.length;
+        changeModalImage(repoName, lib.currentModalIndex);
+    }, 6000); // On reste 6 secondes sur chaque image (plus relax)
+}
+
+function changeModalImage(repoName, index) {
+    const lib = projectLibrary[repoName];
+    const mainImg = document.getElementById('modal-main-img');
+    const thumbs = document.querySelectorAll('#modal-thumbnails img');
+
+    if (!mainImg) return;
+
+    // 1. Fondu sortant total
+    mainImg.style.opacity = '0';
+
+    // 2. On attend que l'image disparaisse (cohérent avec la transition CSS)
+    setTimeout(() => {
+        mainImg.src = lib.images[index];
+
+        // Mise à jour visuelle des miniatures
+        thumbs.forEach((t, i) => {
+            if (i === index) {
+                t.classList.add('border-blue-500', 'opacity-100');
+                t.classList.remove('opacity-50');
+            } else {
+                t.classList.remove('border-blue-500', 'opacity-100');
+                t.classList.add('opacity-50');
+            }
+        });
+
+        // 3. Une fois que la nouvelle image commence à charger, on la réaffiche
+        mainImg.onload = () => {
+            mainImg.style.opacity = '1';
+        };
+
+        // Sécurité si déjà en cache
+        if (mainImg.complete) {
+            mainImg.style.opacity = '1';
+        }
+    }, 500); // Temps du fondu sortant
+}
+
+function stopModalAutoPlay() {
+    if (modalAutoPlayInterval) {
+        clearInterval(modalAutoPlayInterval);
+        modalAutoPlayInterval = null;
+    }
+}
+
+async function loadModalReadme(repoName) {
+    const readmeContainer = document.getElementById('modal-readme');
+    const readmeWrapper = document.getElementById('modal-readme-container');
+    const cacheKey = `readme_${repoName}`;
+
+    // 1. Check Cache
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+        const { html, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 86400000) { // 24h
+            readmeContainer.innerHTML = html;
+            readmeWrapper.classList.remove('hidden');
+            return;
+        }
+    }
+
+    // 2. Fetch GitHub
+    try {
+        const res = await fetch(`https://api.github.com/repos/${repoName}/readme`, {
+            headers: { 'Accept': 'application/vnd.github.html' }
+        });
+
+        if (res.ok) {
+            const htmlText = await res.text();
+            readmeContainer.innerHTML = htmlText;
+
+            // Sauvegarde cache
+            localStorage.setItem(cacheKey, JSON.stringify({
+                html: htmlText,
+                timestamp: Date.now()
+            }));
+
+            readmeWrapper.classList.remove('hidden');
+        } else {
+            // Si pas de README ou erreur (404/403), on s'assure que c'est bien caché
+            readmeWrapper.classList.add('hidden');
+            console.log(`Pas de README trouvé pour ${repoName}`);
+        }
+    } catch (e) {
+        readmeWrapper.classList.add('hidden');
+    }
+}
+
+function closeModal() {
+    stopModalAutoPlay(); // ON ARRÊTE TOUT
+    document.getElementById('project-modal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function navigateProject(direction) {
+    // 1. On cible UNIQUEMENT les cartes dans le conteneur de projets
+    const container = document.getElementById('github-projects-container');
+    if (!container) return;
+
+    const allCards = Array.from(container.querySelectorAll('.project-card'))
+        .filter(card => { return window.getComputedStyle(card).display !== 'none'; });
+
+    if (allCards.length <= 1) return;
+
+    // 2. Trouver l'index du projet actuellement ouvert
+    const currentIndex = allCards.findIndex(card => card.dataset.repo === currentOpenRepo);
+
+    // Si pour une raison X on ne trouve pas l'index, on repart de 0
+    if (currentIndex === -1) {
+        openProjectModal(allCards[0].dataset.repo);
+        return;
+    }
+
+    // 3. Calculer le nouvel index (Boucle infinie)
+    let nextIndex = (currentIndex + direction + allCards.length) % allCards.length;
+
+    console.log(`Navigation : ${currentIndex + 1} -> ${nextIndex + 1} sur ${allCards.length} projets visibles`);    // !!!
+
+    const nextRepo = allCards[nextIndex].dataset.repo;
+
+    // 4. Ouvrir le nouveau projet
+    if (nextRepo) openProjectModal(nextRepo);
+}
+
+// Rendre la fonction accessible globalement pour les onclick
+window.openProjectModal = openProjectModal;
+window.closeModal = closeModal;
 
 /* --- INITIALIZATION --- */
 window.addEventListener('DOMContentLoaded', applyProjectFilter);                // Launch at loading page

@@ -28,6 +28,13 @@
 
     <section id="projets-example" class="py-24">
         <h2 class="section-title">Mes réalisations</h2>
+
+        <section id="projets" class="py-12">
+            <h2 class="section-subtitle">Projets à la une</h2>
+            <div class="project-grid">
+            </div>
+        </section>
+
         <div class="project-grid">
             <div id="projet-python" class="project-card group">
                 <div class="project-media">[DÉMO OU LOGO]</div>
@@ -62,22 +69,73 @@
                 </div>
             </div>
         </div>
-    </section>
 
-    <section id="projets" class="py-12">
-        <h2 class="section-subtitle">Projets à la une</h2>
-        <div class="project-grid">
-        </div>
-    </section>
-
-    <section class="py-12 opacity-80">
-        <h2 class="text-2xl font-bold mb-10 border-l-4 border-gray-600 pl-4 text-gray-400 uppercase tracking-widest">Autres projets GitHub</h2>
-        <div id="github-projects-container" class="github-grid">
-        </div>
+        <section class="py-12 opacity-80">
+            <h2 class="text-2xl font-bold mb-10 border-l-4 border-gray-600 pl-4 text-gray-400 uppercase tracking-widest">Autres projets GitHub</h2>
+            <div id="github-projects-container" class="github-grid">
+            </div>
+        </section>
     </section>
 </main>
 
 <div id="footer-placeholder"></div>
+
+<div id="project-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 md:p-8">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-xl" onclick="closeModal()"></div>
+
+    <button onclick="navigateProject(-1)" class="fixed left-4 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/5 hover:bg-blue-500/20 border border-white/10 rounded-full text-white transition-all group hidden md:block">
+        <svg class="w-8 h-8 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </button>
+
+    <button onclick="navigateProject(1)" class="fixed right-4 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/5 hover:bg-blue-500/20 border border-white/10 rounded-full text-white transition-all group hidden md:block">
+        <svg class="w-8 h-8 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+
+    <div class="relative bg-gray-900/90 border border-white/10 w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row">
+        <button onclick="closeModal()" class="absolute top-4 right-4 z-50 p-2 bg-white/10 hover:bg-red-500 rounded-full transition-colors text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+
+        <div class="w-full md:w-3/5 bg-black/50 p-6 flex flex-col justify-center items-center border-b md:border-b-0 md:border-r border-white/5 overflow-y-auto">
+            <img id="modal-main-img" src="" alt="Aperçu grand format" class="max-w-full max-h-[60vh] object-contain rounded-lg shadow-2xl mb-6 transition-opacity duration-700">
+            <div id="modal-thumbnails" class="flex gap-2 overflow-x-auto pb-2 w-full justify-start px-4 scrollbar-thin">
+            </div>
+        </div>
+
+        <div class="w-full md:w-2/5 flex flex-col max-h-[60vh] md:max-h-full bg-gray-900/90">
+            <div class="p-6 md:p-8 flex-1 overflow-y-auto">
+                <span id="modal-tag" class="tag mb-4 inline-block w-max">Label</span>
+
+                <h2 id="modal-title" class="text-3xl font-bold mb-2 gradient-text">Nom du Projet</h2>
+
+                <div id="modal-stars-container" class="flex items-center gap-2 text-sm text-yellow-500 mb-4 hidden font-bold">
+                    <span>★</span>
+                    <span id="modal-stars">0</span> <span class="text-gray-500 text-xs font-normal">sur GitHub</span>
+                </div>
+
+                <p id="modal-description" class="text-gray-300 leading-relaxed mb-6 font-medium border-l-2 border-blue-500 pl-4">Description détaillée...</p>
+
+                <div id="modal-readme-container" class="flex-1 mb-8">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-white/10 pb-2">À propos du projet</h3>
+                    <div id="modal-readme" class="text-sm text-gray-400 space-y-4">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-white/10 bg-black/40 mt-auto shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10">
+                <div class="flex gap-3">
+                    <button id="modal-play-btn" class="btn-outline flex-1 py-3 rounded-xl font-bold tracking-widest uppercase text-xs flex items-center justify-center gap-2 transition-all hover:bg-green-500/20 hover:border-green-500 hover:text-green-400">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        Jouer
+                    </button>
+                    <a id="modal-link" href="#" target="_blank" class="btn-primary flex-1 py-3 rounded-xl font-bold tracking-widest uppercase text-xs flex justify-center items-center">
+                        Code →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="assets/js/main.js"></script>
 </body>
