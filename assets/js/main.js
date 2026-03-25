@@ -583,6 +583,33 @@ async function openProjectModal(repoName) {
     if (readmeContainer) readmeContainer.innerHTML = ''; // On vide le texte
     if (readmeWrapper) readmeWrapper.classList.add('hidden'); // On cache le bloc README par défaut
 
+    // 1. Récupération des éléments du bouton
+    const playBtn = document.getElementById('modal-play-btn');
+    if (playBtn) {
+        playBtn.innerHTML = "<span>Analyse du dépôt...</span>";
+        playBtn.classList.add('opacity-50', 'pointer-events-none');
+        playBtn.href = "#";
+    }
+
+    try {
+        // 2. On lance deux requêtes en parallèle pour gagner du temps
+        const [repoRes, releaseRes] = await Promise.all([
+            fetch(`https://api.github.com/repos/${repoName}`),
+            fetch(`https://api.github.com/repos/${repoName}/releases/latest`)
+        ]);
+
+        const repoData = await repoRes.json();
+        let releaseData = null;
+        if (releaseRes.ok) releaseData = await releaseRes.json();
+
+        // 3. Mise à jour intelligente du bouton
+        updatePlayButton(repoData, releaseData);
+
+    } catch (e) {
+        console.error("Erreur lors de la mise à jour du bouton :", e);
+        if (playBtn) playBtn.classList.add('hidden'); // On cache si erreur
+    }
+
     const lib = projectLibrary[repoName] || { images: ['assets/img/icon-bg.png'] };
     const card = document.querySelector(`[data-repo="${repoName}"]`);
     if (!card) return;
@@ -639,6 +666,35 @@ async function openProjectModal(repoName) {
 
     // ... (Reste de ton code pour le README avec le cache)
     loadModalReadme(repoName); // J'ai factorisé pour la clarté
+}
+
+function updatePlayButton(repo, release) {
+    const playBtn = document.getElementById('modal-play-btn');
+    if (!playBtn) return;
+
+    playBtn.classList.remove('opacity-50', 'pointer-events-none', 'hidden');
+
+    // PRIORITÉ 1 : Jeu en ligne (Unity WebGL / Web)
+    if (repo.homepage && repo.homepage.trim() !== "") {
+        playBtn.innerHTML = `<span>🎮 Jouer en ligne</span>`;
+        playBtn.href = repo.homepage;
+        playBtn.target = "_blank";
+        playBtn.className = "btn-play-web"; // Une classe CSS spécifique
+    }
+    // PRIORITÉ 2 : Téléchargement (Unity/Unreal/Python)
+    else if (release && release.assets && release.assets.length > 0) {
+        // On cherche le premier fichier .zip ou .exe
+        const asset = release.assets.find(a => a.name.endsWith('.zip') || a.name.endsWith('.exe'));
+        if (asset) {
+            playBtn.innerHTML = `<span>💾 Télécharger (.zip)</span>`;
+            playBtn.href = asset.browser_download_url;
+            playBtn.className = "btn-play-download";
+        } else {
+            playBtn.classList.add('hidden');    // Pas d'assets compatible
+        }
+    } else {
+        playBtn.classList.add('hidden'); // Pas de source
+    }
 }
 
 function startModalAutoPlay(repoName) {

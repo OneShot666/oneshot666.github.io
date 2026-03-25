@@ -50,15 +50,29 @@
                 </p>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 pt-4">
-                <div class="bg-white/5 border border-white/10 p-4 rounded-2xl">
-                    <span class="block text-blue-500 font-bold text-2xl">5+</span>
-                    <span class="text-xs uppercase tracking-widest text-gray-500">Langages maîtrisés</span>
+            <!-- Conteneur principal calé sur la largeur du texte -->
+            <div class="flex items-stretch gap-4 pt-4">
+
+                <!-- Carte Stat 1 : flex-1 pour prendre l'espace disponible -->
+                <div class="flex-1 bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col justify-center">
+                    <span class="block text-blue-500 font-bold text-3xl">5+</span>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Langages maîtrisés</span>
                 </div>
-                <div class="bg-white/5 border border-white/10 p-4 rounded-2xl">
-                    <span class="block text-purple-500 font-bold text-2xl">∞</span>
-                    <span class="text-xs uppercase tracking-widest text-gray-500">Curiosité technique</span>
+
+                <!-- Carte Stat 2 : flex-1 pour prendre l'espace disponible -->
+                <div class="flex-1 bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col justify-center">
+                    <span class="block text-purple-500 font-bold text-3xl">∞</span>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Curiosité technique</span>
                 </div>
+
+                <!-- Bouton CV : h-auto + aspect-square pour forcer le carré sur la hauteur des cartes -->
+                <a href="../files/cv.pdf" download="CV - Nathan Mir.pdf"
+                   class="h-auto aspect-square min-w-[100px] bg-blue-600 hover:bg-blue-500 text-white rounded-3xl flex flex-col items-center justify-center transition-all shadow-lg shadow-blue-500/30 group active:scale-[0.92] px-4">
+                    <svg class="w-10 h-10 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <span class="text-[9px] font-black uppercase tracking-[0.2em] mt-2">Mon CV</span>
+                </a>
             </div>
         </div>
 
