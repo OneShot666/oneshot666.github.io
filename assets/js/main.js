@@ -669,6 +669,7 @@ async function openProjectModal(repoName) {
 }
 
 function updatePlayButton(repo, release) {
+    console.log("Données reçues pour le bouton :", { homepage: repo.homepage, release: release });  // !!!
     const playBtn = document.getElementById('modal-play-btn');
     if (!playBtn) return;
 
