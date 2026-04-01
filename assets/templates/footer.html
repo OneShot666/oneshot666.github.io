@@ -15,13 +15,28 @@
         <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-2">
                 <span class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Navigation</span>
-                <a href="#projets" class="nav-link text-xs">Projets</a>
-                <a href="assets/pages/about.html" class="nav-link text-xs">À propos</a>
+                <ul class="space-y-4">
+                    <li><a href="#projets" class="text-gray-400 hover:text-blue-400 transition-colors">Projets</a></li>
+                    <li><a href="about.html" class="text-gray-400 hover:text-blue-400 transition-colors">À Propos</a></li>
+                </ul>
             </div>
+
             <div class="flex flex-col gap-2">
                 <span class="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Réseaux</span>
-                <a href="https://github.com/oneshot666" class="nav-link text-xs">GitHub</a>
-                <a href="mailto:oneshot666@email.com" class="nav-link text-xs">Email</a>
+                <div class="footer-socials flex gap-6 mt-4">
+                    <a href="#" data-link="github" class="footer-icon-link" title="GitHub">
+                        <i class="fab fa-github text-3xl"></i>
+                    </a>
+                    <a href="#" data-link="linkedin" class="footer-icon-link" title="LinkedIn">
+                        <i class="fab fa-linkedin text-3xl"></i>
+                    </a>
+                    <a href="#" data-link="itchio" class="footer-icon-link" title="Itch.io">
+                        <i class="fab fa-itch-io text-3xl"></i>
+                    </a>
+                    <a href="#" data-link="email" class="footer-icon-link" title="Contactez-moi">
+                        <i class="fas fa-envelope text-3xl"></i>
+                    </a>
+                </div>
             </div>
         </div>
 

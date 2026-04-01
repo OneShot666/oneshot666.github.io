@@ -367,6 +367,68 @@ section[id] { scroll-margin-top: 5rem; }
     filter: drop-shadow(0 20px 40px rgba(59, 130, 246, 0.3));
 }
 
+/* Positionnement des bulles d'icônes */
+.floating-icon {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    font-size: 2rem;                                                            /* icon size */
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    color: white;
+    z-index: 30; /* Au-dessus de tout */
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.floating-icon:hover {
+    color: #60a5fa; /* blue-400 */
+    border-color: rgba(96, 165, 250, 0.5);
+    transform: scale(1.2);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Social network icon around logo */
+.icon-1 { top: -10px; left: -10px; animation: floatIcon 4s ease-in-out infinite; }
+.icon-2 { top: 40%; right: -25px; animation: floatIcon 5s ease-in-out infinite 1s; }
+.icon-3 { bottom: 20px; left: -30px; animation: floatIcon 6s ease-in-out infinite 0.5s; }
+
+.about-card-container:hover .icon-1 { top: -30px;  left: -30px; }
+.about-card-container:hover .icon-2 { right: -45px; }
+.about-card-container:hover .icon-3 { bottom: 0px;  left: -40px; }
+
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-10px) translateX(5px); }
+}
+
+/* --- Icônes Sociales Page Principale --- */
+
+.social-icon {
+    font-size: 2.5rem;          /* Taille imposante (environ 40px) */
+    color: white;               /* Base blanche */
+    opacity: 0.4;               /* Semi-transparent au repos */
+    transition: all 0.5s var(--transition-smooth); /* Animation fluide et lente */
+    display: inline-block;
+}
+
+.social-icon:hover {
+    opacity: 1;                 /* Devient totalement opaque */
+    transform: translateY(-8px); /* Petit bond vers le haut */
+
+    /* Optionnel : ajout d'un petit halo blanc pour l'effet "néon blanc" */
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+}
+
+/* Espacement si nécessaire (si gap-4 dans le HTML est trop serré) */
+.social-container {
+    gap: 1.5rem; /* Ajuste l'espace entre les icônes si besoin */
+}
+
 /* ==========================================================================
    7. FOOTER REVEAL - STRUCTURE EXACTE
    ========================================================================= */
@@ -444,6 +506,11 @@ section[id] { scroll-margin-top: 5rem; }
 
 .footer-reveal:hover .footer-handle-text { color: var(--blue-hover); }
 
+#footer-placeholder a:not(.footer-icon-link) {
+    display: block;      /* Pour que la marge s'applique bien */
+    padding-top: 0.1rem; /* Équivalent à ~8px */
+}
+
 /* Tablette & Mobile */
 @media (max-width: 768px) {
     .footer-content {
@@ -458,6 +525,24 @@ section[id] { scroll-margin-top: 5rem; }
     }
 }
 
+.footer-icon-link {
+display: inline-block;
+    color: #6b7280; /* text-gray-500 */
+    font-size: 1.875rem; /* text-3xl */
+    /* Transition lente : 0.5s au lieu de 0.3s pour plus de douceur */
+    transition: transform 0.5s var(--transition-smooth), color 0.5s ease, filter 0.5s ease;
+}
+
+.footer-icon-link:hover {
+    transform: scale(1.2) translateY(-8px); /* S'agrandit et monte un peu */
+}
+
+/* Effets de couleur individuels au survol */
+.footer-icon-link[data-link="github"]:hover { color: #ffffff; filter: drop-shadow(0 0 8px rgba(255,255,255,0.5)); }
+.footer-icon-link[data-link="linkedin"]:hover { color: #0077b5; filter: drop-shadow(0 0 8px rgba(0,119,181,0.5)); }
+.footer-icon-link[data-link="itchio"]:hover { color: #fa5c5c; filter: drop-shadow(0 0 8px rgba(250,92,92,0.5)); }
+.footer-icon-link[data-link="email"]:hover { color: var(--blue-led); filter: drop-shadow(0 0 8px var(--blue-led)); }
+
 /* ==========================================================================
    8. ABOUT PAGE - TRANSFORMING CARD
    ========================================================================= */
@@ -467,41 +552,45 @@ section[id] { scroll-margin-top: 5rem; }
 .about-card-mask,
 .about-card-image,
 .about-card-halo {
-    transition: all 0.8s var(--transition-smooth); /* On utilise ta vitesse de 0.8s */
+    transition: all 0.8s var(--transition-smooth);
 }
 
 .about-card-container {
     position: relative;
     width: 20rem; /* w-72 (environ 288px) */
     height: 20rem; /* Carré par défaut (1:1) */
-    /* On sépare les transitions pour plus de stabilité */
-    transition: height 0.8s var(--transition-smooth),
-        transform 0.8s var(--transition-smooth);
-    /* Indispensable pour l'expansion symétrique */
-    display: flex;
+    /* transition: height 0.8s var(--transition-smooth), transform 0.8s var(--transition-smooth); */
+    display: flex; /* Indispensable pour l'expansion symétrique */
     align-items: center;
     justify-content: center;
+    transition: all 0.8s var(--transition-smooth);
+    background-color: transparent !important; /* Force bg transparency */
+    border: none !important; /* Delete parent's borders */
 }
 
 /* Le masque qui contient l'image */
 .about-card-mask {
     position: absolute; /* Positionné par rapport au conteneur de la carte */
+    width: 100%;
+    height: 100%;
     inset: 0; /* Prend toute la place au repos */
-    overflow: hidden;
     background-color: #000; /* Le fond noir du masque */
-    border-radius: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-
+    border-radius: 10rem;
+    overflow: hidden;
+    /* border: 1px solid rgba(255, 255, 255, 0.1); */
     /* Indispensable pour l'animation symétrique */
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.8s var(--transition-smooth);
+    z-index: 10;
 }
 
 .about-card-image {
     min-width: 20rem;
     min-height: 20rem;
-    object-fit: cover; /* L'image remplit l'espace sans se déformer */
+    /* object-fit: cover; /* L'image remplit l'espace sans se déformer */
+    object-fit: contain; /* Garde le logo intact au centre */
     transition: transform 0.8s var(--transition-smooth);
     /* On empêche l'image de répondre aux changements de taille du parent */
     flex-shrink: 0;
@@ -511,26 +600,73 @@ section[id] { scroll-margin-top: 5rem; }
 .about-card-halo {
     position: absolute;
     inset: 0;
-    border-radius: inherit;
+    border-radius: 10rem;
     /* Ombre de base douce */
     box-shadow: 0 20px 50px -10px rgba(59, 130, 246, 0.3);
     z-index: -1; /* Derrière la carte */
+    transition: all 0.8s var(--transition-smooth);
 }
 
-/* ==========================================================================
-   ÉTAT AU SURVOL (HOVER)
-   ========================================================================= */
-
+/* Hover functions */
 .about-card-container:hover {
-    height: 30rem; /* w-72 x h-108 (2:3 parfait) */
+    width: 22rem;               /* Enlarge card when hover */
+    height: 33rem;
     transform: translateY(-10px); /* Légère lévitation supplémentaire */
 }
 
+.about-card-container:hover .about-card-mask {
+    /* On passe du rayon 10rem (cercle) à 1.5rem (coins de carte à jouer) */
+    border-radius: 1.5rem;
+    /* box-shadow: 0 0 40px rgba(59, 130, 246, 0.2); */
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
 .about-card-container:hover .about-card-image {
-    /* transform: scale(1.1); /* Zoom très léger et fluide */
+    border-radius: 50%;
+    transform: translateY(0px) scale(0.95);
+    filter: brightness(1.1) ;/*drop-shadow(0 0 15px rgba(59, 130, 246, 0.5)); */
+    opacity: 0.9;
 }
 
 .about-card-container:hover .about-card-halo {
+    border-radius: 1.5rem;
     /* Le halo devient plus brillant et suit la forme */
     box-shadow: 0 30px 70px -5px rgba(59, 130, 246, 0.6);
+}
+
+/* ==========================================================================
+   9. READ ME - CLEANING CONTENT
+   ========================================================================= */
+
+/* Style du contenu du README dans la modale */
+#modal-readme {
+    white-space: normal; /* Permet au texte de s'adapter à la largeur */
+    line-height: 1.6;    /* Espace entre les lignes pour la lisibilité */
+    color: #d1d5db;      /* Gris doux (text-gray-300) */
+}
+
+/* On force les espaces entre les paragraphes que GitHub omet parfois */
+#modal-readme p {
+    margin-bottom: 1.25rem;
+}
+
+/* On stylise les titres pour qu'ils soient sobres */
+#modal-readme h1, #modal-readme h2, #modal-readme h3 {
+    color: white;
+    font-weight: bold;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    border: none; /* On enlève les lignes de séparation par défaut de GitHub */
+}
+
+/* On cache les éventuelles icônes SVG qui auraient survécu */
+#modal-readme svg {
+    display: none !important;
+}
+
+/* On stylise les listes pour qu'elles soient propres */
+#modal-readme ul {
+    list-style-type: square;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
 }

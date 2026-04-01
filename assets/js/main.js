@@ -3,8 +3,32 @@ const titleCase = (s) => s.toLowerCase().split(' ').map(w => w.charAt(0).toUpper
 let modalAutoPlayInterval = null;
 let currentOpenRepo = null; // Pour savoir quel projet est ouvert
 
-// Fonction pour précharger une image en mémoire
-const preloadImage = (url) => {
+const USER_CONFIG = {
+    username: "OneShot666",
+    links: {
+        github: "https://github.com/OneShot666",
+        linkedin: "https://www.linkedin.com/in/nathan-mir-05b404209/",
+        itchio: "https://oneshot666.itch.io/",
+        email: "mailto:mir.nathan42@gmail.com"
+    },
+    projectSettings: {
+        "Space-Defender": { type: "iframe", url: "https://itch.io/embed-upload/17017344?color=010046" },
+//        "Space-Invader": { type: "iframe", url: "https://oneshot666.github.io/Space-Invader/" },
+//        "Nom-Du-Repo-Web": { type: "external" }, // Utilise le lien 'homepage' de GitHub
+    },
+};
+
+async function checkGithubPages(repoName) {
+    const url = `https://${USER_CONFIG.username.toLowerCase()}.github.io/${repoName}/`;
+    try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok ? url : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+const preloadImage = (url) => {                                                 // Preload image in cache
     const img = new Image();
     img.src = url;
 };
@@ -181,6 +205,8 @@ async function loadComponent(id, path) {
                 if (footer) footer.classList.replace('translate-y-full', 'translate-y-[calc(100%-3rem)]');
             }
         }
+
+        setupSocialLinks();
     } catch (e) { console.error(`Error loading ${path}:`, e); }
 }
 
@@ -218,6 +244,7 @@ function updateServerStatus(state) {
 
 async function fetchGithubProjects() {
     const container = document.getElementById('github-projects-container');
+    const featuredContainer = document.getElementById('featured-projects-container');
     if (!container) return;
 
     const username = 'OneShot666';
@@ -261,72 +288,100 @@ async function fetchGithubProjects() {
     }
 }
 
+function getProjectTech(repo) {
+    const topics = repo.topics.map(t => t.toLowerCase());
+    const language = (repo.language || "").toLowerCase();
+
+    if (topics.includes('unity')) return { id: "unity", label: "Unity", tagClass: "tag-unity" };
+    if (topics.includes('unreal')) return { id: "unreal", label: "Unreal Engine", tagClass: "tag-unreal" };
+    if (topics.includes('python') || topics.includes('pygame') || language === 'python')
+        return { id: "python", label: "Python", tagClass: "tag-python" };
+    if (topics.includes('website') || language === 'javascript' || language === 'java' || language === 'php' || language === 'html')
+        return { id: "web", label: "Web Dev", tagClass: "tag-general" };
+    return { id: "other", label: "Informatique", tagClass: "tag-general" };
+}
+
 // On déporte la création du HTML ici pour plus de clarté
 function renderProjects(repos) {
-    const container = document.getElementById('github-projects-container');
+    const standardContainer = document.getElementById('github-projects-container');
+    const featuredContainer = document.getElementById('featured-projects-container');
+
     const username = 'OneShot666';
     const forbidden = [username.toLowerCase(), 'ourofolios', 'portfolio'];
 
-    // --- TRI PAR STARS ---
-    repos.sort((a, b) => b.stargazers_count - a.stargazers_count);
-
-    container.innerHTML = repos
+    const allRepos = repos                                                      // Filter and sort by stars
         .filter(repo => !repo.fork && !forbidden.some(k => repo.name.toLowerCase().includes(k)))
-        .map(repo => {
-            const name = repo.name.toLowerCase();
-            const description = (repo.description || "").toLowerCase();
-            const language = (repo.language || "").toLowerCase();
-            const topics = repo.topics.map(t => t.toLowerCase());
+        .sort((a, b) => b.stargazers_count - a.stargazers_count);
 
-            let label = "Informatique", tagClass = "tag-general";
+    const featured = [];
+    const usedIds = new Set();
+    const categoriesFound = new Set();
 
-            if (topics.includes('unity') || topics.includes('unity3d') || name.includes('unity') || description.includes('unity')) {
-                label = "Unity"; tagClass = "tag-unity";
-            } else if (topics.includes('unreal-engine') || topics.includes('ue4') || topics.includes('ue5') || name.includes('unreal')) {
-                label = "Unreal Engine"; tagClass = "tag-unreal";
-            } else if (language === 'python' || name.includes('py-') || name.includes('-py') || description.includes('python')) {
-                label = "Python"; tagClass = "tag-python";
-            } else if (topics.includes('website') || language === 'javascript' || language === 'java' || language === 'php' || language === 'html') {
-                label = "Web Dev"; tagClass = "tag-general";
-            }
+    allRepos.forEach(repo => {                                                  // Get best projects
+        const tech = getProjectTech(repo);
+        // Si c'est une catégorie qu'on veut mettre en avant et qu'on ne l'a pas encore remplie
+        if (tech.id !== 'other' && !categoriesFound.has(tech.id)) {
+            featured.push(repo);
+            usedIds.add(repo.id);
+            categoriesFound.add(tech.id);
+        }
+    });
 
-            // Petit bonus : afficher le nombre de stars dans le HTML si tu le souhaites
-            const starCount = repo.stargazers_count > 0 ?
-                `<span class="text-yellow-500 text-[10px] ml-2">★ ${repo.stargazers_count}</span>` : '';
+    featured.sort((a, b) => b.stargazers_count - a.stargazers_count);           // Re-sort list
 
-            const r_name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
+    // 3. Rendu des Featured
+    if (featuredContainer) {
+        featuredContainer.innerHTML = renderRepos(featured);
+    }
 
-            return `
-            <div class="project-card group cursor-pointer" onclick="openProjectModal('${username}/${repo.name}')"
-            data-repo="${username}/${repo.name}" data-title="${r_name}" data-stars="${repo.stargazers_count}" data-img-path="img/screenshots">
-                <div class="project-media loading relative h-48 w-full overflow-hidden bg-black/50">
-                    <img src="assets/img/icon-bg.png" class="project-viewer w-full h-full object-cover transition-opacity duration-500" alt="Aperçu">
+    const remaining = allRepos.filter(r => !usedIds.has(r.id));
+    if (standardContainer) {
+        standardContainer.innerHTML = renderRepos(remaining);
+    }
 
-                    <div class="viewer-controls hidden absolute inset-0 z-30">
-                        <button onclick="changeImage(this, -1, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-                        </button>
-                        <button onclick="changeImage(this, 1, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
-                        </button>
-                    </div>
+    initProjectViewers();                                                       // Look for all projects image
+}
 
-                    <div class="img-counter hidden absolute bottom-2 right-2 px-2 py-0.5 bg-black/80 rounded text-[10px] font-mono text-blue-400 border border-white/10 shadow-lg">
-                        <span class="img-index">01</span>/<span class="img-total">01</span>
-                    </div>
+function renderRepos(repos) {
+    const username = 'OneShot666';
+
+    return repos.map(repo => {
+        const tech = getProjectTech(repo);                                      // Get infos (tag...)
+
+        const starCount = repo.stargazers_count > 0 ?                           // Display stars
+            `<span class="text-yellow-500 text-[10px] ml-2">★ ${repo.stargazers_count}</span>` : '';
+
+        const r_name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
+
+        return `
+        <div class="project-card group cursor-pointer" onclick="openProjectModal('${username}/${repo.name}')"
+        data-repo="${username}/${repo.name}" data-title="${r_name}" data-stars="${repo.stargazers_count}" data-img-path="img/screenshots">
+            <div class="project-media loading relative h-48 w-full overflow-hidden bg-black/50">
+                <img src="assets/img/icon-bg.png" class="project-viewer w-full h-full object-cover transition-opacity duration-500" alt="Aperçu">
+
+                <div class="viewer-controls hidden absolute inset-0 z-30">
+                    <button onclick="changeImage(this, -1, event)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button onclick="changeImage(this, 1, event)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 p-2 rounded-full hover:bg-blue-500 hover:scale-110 text-white transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                    </button>
                 </div>
 
-                <div class="project-body">
-                    <span class="tag ${tagClass}">${label}</span>
-                    <h3 class="project-title text-xl font-bold">${r_name} ${starCount}</h3>
-                    <p class="project-text text-sm text-gray-400 mt-2">${repo.description || "Exploration technique."}</p>
-                    <a href="${repo.html_url}" target="_blank"
-                        class="inline-block mt-4 text-xs text-blue-400 hover:text-white font-bold tracking-widest uppercase">Voir le code →</a>
+                <div class="img-counter hidden absolute bottom-2 right-2 px-2 py-0.5 bg-black/80 rounded text-[10px] font-mono text-blue-400 border border-white/10 shadow-lg">
+                    <span class="img-index">01</span>/<span class="img-total">01</span>
                 </div>
-            </div>`;
-        }).join('');
+            </div>
 
-    initProjectViewers();                                                   // Look for all projects image
+            <div class="project-body">
+                <span class="tag ${tech.tagClass}">${tech.label}</span>
+                <h3 class="project-title text-xl font-bold">${r_name} ${starCount}</h3>
+                <p class="project-text text-sm text-gray-400 mt-2">${repo.description || "Exploration technique."}</p>
+                <a href="${repo.html_url}" target="_blank"
+                    class="inline-block mt-4 text-xs text-blue-400 hover:text-white font-bold tracking-widest uppercase">Voir le code →</a>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 async function updateProjectsDropdown() {
@@ -589,6 +644,7 @@ async function openProjectModal(repoName) {
         playBtn.innerHTML = "<span>Analyse du dépôt...</span>";
         playBtn.classList.add('opacity-50', 'pointer-events-none');
         playBtn.href = "#";
+        playBtn.onclick = null;                                                 // Disable click during analysis
     }
 
     try {
@@ -603,7 +659,7 @@ async function openProjectModal(repoName) {
         if (releaseRes.ok) releaseData = await releaseRes.json();
 
         // 3. Mise à jour intelligente du bouton
-        updatePlayButton(repoData, releaseData);
+        await updatePlayButton(repoData, releaseData);
 
     } catch (e) {
         console.error("Erreur lors de la mise à jour du bouton :", e);
@@ -668,33 +724,44 @@ async function openProjectModal(repoName) {
     loadModalReadme(repoName); // J'ai factorisé pour la clarté
 }
 
-function updatePlayButton(repo, release) {
-    console.log("Données reçues pour le bouton :", { homepage: repo.homepage, release: release });  // !!!
+async function updatePlayButton(repo, release) {
     const playBtn = document.getElementById('modal-play-btn');
     if (!playBtn) return;
 
     playBtn.classList.remove('opacity-50', 'pointer-events-none', 'hidden');
+    playBtn.onclick = null; // On nettoie l'ancien événement click
+    playBtn.target = "_blank";
 
-    // PRIORITÉ 1 : Jeu en ligne (Unity WebGL / Web)
-    if (repo.homepage && repo.homepage.trim() !== "") {
-        playBtn.innerHTML = `<span>🎮 Jouer en ligne</span>`;
+    const config = USER_CONFIG.projectSettings ? USER_CONFIG.projectSettings[repo.name] : null;
+    const ghPagesUrl = await checkGithubPages(repo.name);                       // Check if dynamic url already exists
+
+    if ((config && config.type === "iframe") ||ghPagesUrl) {                    // 1- If iframe url exists
+        const finalUrl = (config && config.type === "iframe") ? config.url : ghPagesUrl;
+
+        playBtn.innerHTML = `<span>🎮 Lancer le système</span>`;
+        playBtn.href = "javascript:void(0)";                                    // Prevent y-scroll
+        playBtn.target = "_self";
+        playBtn.className = "btn-play-web";
+
+        playBtn.onclick = (e) => { e.preventDefault(); openGameModal(finalUrl, repo.name); };   // Attach opening modal function
+        return;                                                                 // Found playable url: stop function
+    } else if (repo.homepage && repo.homepage.trim() !== "") {                  // 2- If github link exists
+        playBtn.innerHTML = `<span>🌐 Jouer en ligne</span>`;
         playBtn.href = repo.homepage;
         playBtn.target = "_blank";
-        playBtn.className = "btn-play-web"; // Une classe CSS spécifique
-    }
-    // PRIORITÉ 2 : Téléchargement (Unity/Unreal/Python)
-    else if (release && release.assets && release.assets.length > 0) {
-        // On cherche le premier fichier .zip ou .exe
+        playBtn.className = "btn-play-web";
+        return;
+    } else if (release && release.assets && release.assets.length > 0) {        // 3- If downloadable link exists
         const asset = release.assets.find(a => a.name.endsWith('.zip') || a.name.endsWith('.exe'));
         if (asset) {
             playBtn.innerHTML = `<span>💾 Télécharger (.zip)</span>`;
             playBtn.href = asset.browser_download_url;
             playBtn.className = "btn-play-download";
-        } else {
-            playBtn.classList.add('hidden');    // Pas d'assets compatible
+        } else {                                                                // No compatible asset found
+            playBtn.classList.add('hidden');
         }
-    } else {
-        playBtn.classList.add('hidden'); // Pas de source
+    } else {                                                                    // If nothing found, hide play button again
+        playBtn.classList.add('hidden');
     }
 }
 
@@ -776,19 +843,16 @@ async function loadModalReadme(repoName) {
 
         if (res.ok) {
             const htmlText = await res.text();
-            readmeContainer.innerHTML = htmlText;
+            const parser = new DOMParser();
+            doc.querySelectorAll('img').forEach(img => img.remove());           // Remove images (bagdes, logos...)
+            doc.querySelectorAll('.anchor').forEach(anchor => anchor.remove()); // Remove link icons
+            const doc = parser.parseFromString(htmlContent, 'text/html');
+            readmeContainer.innerHTML = doc.body.innerHTML;
 
-            // Sauvegarde cache
-            localStorage.setItem(cacheKey, JSON.stringify({
-                html: htmlText,
-                timestamp: Date.now()
-            }));
-
+            localStorage.setItem(cacheKey, JSON.stringify({ html: htmlText, timestamp: Date.now() }));  // Save cache
             readmeWrapper.classList.remove('hidden');
         } else {
-            // Si pas de README ou erreur (404/403), on s'assure que c'est bien caché
-            readmeWrapper.classList.add('hidden');
-            console.log(`Pas de README trouvé pour ${repoName}`);
+            readmeWrapper.classList.add('hidden');                              // Hide if error
         }
     } catch (e) {
         readmeWrapper.classList.add('hidden');
@@ -831,9 +895,52 @@ function navigateProject(direction) {
     if (nextRepo) openProjectModal(nextRepo);
 }
 
+function setupSocialLinks() {
+    document.querySelectorAll('[data-link]').forEach(el => {
+        const platform = el.getAttribute('data-link');
+        if (USER_CONFIG.links[platform]) {
+            el.href = USER_CONFIG.links[platform];
+            el.target = "_blank";                                               // Open in new tab
+        }
+    });
+}
+
 // Rendre la fonction accessible globalement pour les onclick
 window.openProjectModal = openProjectModal;
 window.closeModal = closeModal;
+
+/* -- Game modals -- */
+function openGameModal(url, title, isPlayable = true) {
+    const modal = document.getElementById('game-modal');
+    const iframe = document.getElementById('game-viewport');
+    const titleEl = document.getElementById('modal-game-title');
+    const noPlayable = document.getElementById('no-playable-msg');
+
+    titleEl.textContent = `SYSTEM_LOAD: ${title}`;
+    modal.classList.remove('hidden');
+
+    // Empêcher le scroll du body quand on joue
+    document.body.style.overflow = 'hidden';
+
+    if (isPlayable && url !== "#") {
+        iframe.classList.remove('hidden');
+        noPlayable.classList.add('hidden');
+        iframe.src = url;
+    } else {
+        iframe.classList.add('hidden');
+        noPlayable.classList.remove('hidden');
+        iframe.src = "";
+    }
+}
+
+function closeGameModal() {
+    const modal = document.getElementById('game-modal');
+    const iframe = document.getElementById('game-viewport');
+
+    modal.classList.add('hidden');
+    iframe.src = ""; // Très important : coupe le son et décharge la mémoire
+    document.body.style.overflow = 'auto';
+}
 
 /* --- INITIALIZATION --- */
 window.addEventListener('DOMContentLoaded', applyProjectFilter);                // Launch at loading page
@@ -846,6 +953,73 @@ document.addEventListener('DOMContentLoaded', () => {
     initCursor();                                                               // Launch modules
     new ParticleManager('neural-canvas');
     fetchGithubProjects();
+    initContactForm();
 
     setTimeout(updateProjectsDropdown, 500);
 });
+
+/* --- GESTION DU FORMULAIRE DE CONTACT --- */
+function initContactForm() {
+    const form = document.getElementById('contact-form');
+    const charCount = document.getElementById('char-count');
+    const messageArea = document.getElementById('message');
+    const status = document.getElementById('form-status');
+    const submitBtn = document.getElementById('submit-btn');
+
+    if (!form) return;
+
+    // 1. Compteur de caractères en temps réel
+    messageArea.addEventListener('input', () => {
+        const remaining = 500 - messageArea.value.length;
+        charCount.textContent = remaining;
+        charCount.style.color = remaining < 50 ? '#ef4444' : '#6b7280';
+    });
+
+    // 2. Nettoyage des données (Anti-XSS simple)
+    const sanitize = (str) => {
+        const temp = document.createElement('div');
+        temp.textContent = str;
+        return temp.innerHTML;
+    };
+
+    // 3. Envoi du formulaire
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const data = {
+            name: sanitize(formData.get('name')),
+            email: formData.get('email'), // Le type="email" du HTML gère la validation format
+            subject: sanitize(formData.get('subject')),
+            message: sanitize(formData.get('message'))
+        };
+
+        submitBtn.disabled = true;
+        status.textContent = "Chiffrement et envoi en cours...";
+        status.className = "text-blue-400 animate-pulse";
+
+        try {
+            const response = await fetch('https://formspree.io/f/mreolqlz', {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+            });
+
+            // const result = await response.json();                            // Formspree response
+
+            if (response.ok) {
+                status.textContent = "Transmission réussie. Message reçu.";
+                status.className = "text-green-400 font-bold";
+                form.reset();
+                charCount.textContent = "500";
+            } else {
+                throw new Error();
+            }
+        } catch (error) {
+            status.textContent = "Erreur de transmission. Réessayez plus tard.";
+            status.className = "text-red-400 font-bold";
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+}

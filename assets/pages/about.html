@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>À Propos | Ourofolios</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/style.css">
     <style>
         /* Désactive la scrollbar et le défilement sur le body */
@@ -38,7 +39,7 @@
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center ml-20 w-full">
         <div class="space-y-8 order-2 lg:order-1">
             <h1 class="text-5xl font-black italic uppercase tracking-tighter">
-                Le code est un <span class="gradient-text">cycle infini</span>.
+                Le code est un <br><span class="gradient-text">cycle infini</span>
             </h1>
 
             <div class="space-y-6 text-gray-400 leading-relaxed text-lg">
@@ -77,11 +78,22 @@
         </div>
 
         <div class="relative min-h-[550px] flex justify-center items-center order-1 lg:order-2">
-            <div class="about-card-container float-animation group">
-                <div class="about-card-halo"></div>
-                <div class="about-card-mask">
+            <div class="about-card-container float-animation group relative bg-transparent border-none">
+                <div class="about-card-halo opacity-30"></div>
+
+                <div class="about-card-mask border-2 border-white/10 shadow-2xl">
                     <img src="../img/icon-bg.png" alt="Ouroboros Portrait" class="about-card-image">
                 </div>
+
+                <a href="#" data-link="github" class="floating-icon icon-1">
+                    <i class="fab fa-github text-3xl"></i>
+                </a>
+                <a href="#" data-link="linkedin" class="floating-icon icon-2">
+                    <i class="fab fa-linkedin text-3xl"></i>
+                </a>
+                <a href="#" data-link="itchio" class="floating-icon icon-3">
+                    <i class="fab fa-itch-io text-3xl"></i>
+                </a>
 
                 <div class="absolute -bottom-6 -right-6 bg-gray-900 border border-blue-500/50 p-4 rounded-2xl shadow-xl backdrop-blur-xl animate-bounce-slow z-20">
                     <p class="text-[10px] font-mono text-blue-400 uppercase tracking-tighter">Status: Creating_</p>

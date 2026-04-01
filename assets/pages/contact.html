@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Contact | Ourofolios</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/style.css">
     <style>
         /* Désactive la scrollbar et le défilement sur le body */
@@ -73,34 +74,39 @@
 
         <div class="space-y-8 order-2">
             <h1 class="text-5xl font-black italic uppercase tracking-tighter">
-                Initialiser la <span class="gradient-text">connexion</span>.
+                Initialiser la <span class="gradient-text">connexion</span>
             </h1>
 
-            <form action="#" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form id="contact-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
-                        <label class="text-[10px] uppercase tracking-widest text-gray-500 ml-2">Identifiant / Nom</label>
-                        <input type="text" placeholder="User_Name" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-white font-mono text-sm">
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 ml-2">Identité / Nom</label>
+                        <input type="text" id="name" name="name" required maxlength="50" placeholder="User_Name"
+                               class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-white font-mono text-sm">
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[10px] uppercase tracking-widest text-gray-500 ml-2">Canal / Email</label>
-                        <input type="email" placeholder="mail@domain.com" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-white font-mono text-sm">
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 ml-2">Fréquence / Email</label>
+                        <input type="email" id="email" name="email" required placeholder="nom@exemple.com"
+                               class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-white font-mono text-sm">
                     </div>
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-[10px] uppercase tracking-widest text-gray-500 ml-2">Protocole / Objet</label>
-                    <input type="text" placeholder="Sujet de la transmission" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-white font-mono text-sm">
+                    <input type="text" id="subject" name="subject" required maxlength="100" placeholder="Sujet de la transmission"
+                           class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-white font-mono text-sm">
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-[10px] uppercase tracking-widest text-gray-500 ml-2">Données / Message</label>
-                    <textarea rows="5" placeholder="Écrivez votre message ici..." class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-white font-mono text-sm resize-none"></textarea>
+                    <label class="text-[10px] uppercase tracking-widest text-gray-500 ml-2">Données / Message (<span id="char-count">500</span> restants)</label>
+                    <textarea id="message" name="message" required maxlength="500" rows="5" placeholder="Écrivez votre message ici..."
+                              class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-white font-mono text-sm resize-none"></textarea>
                 </div>
 
-                <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98]">
-                    Envoyer la Transmission →
+                <button type="submit" id="submit-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-blue-500/20 active:scale-95">
+                    Envoyer la transmission
                 </button>
+                <p id="form-status" class="text-center text-xs mt-4 font-mono"></p>
             </form>
         </div>
     </section>

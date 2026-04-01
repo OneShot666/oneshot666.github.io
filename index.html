@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>One Shot | Ourofolios</title>
     <meta name="description" content="Portfolio de projets informatiques : Python, Jeux Vidéo, sites et logiciels.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="assets/img/icon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/css/style.css">
@@ -19,10 +20,18 @@
 <main>
     <section class="hero">
         <h1 class="hero-title">De l'imagination<br><span class="gradient-text">à l'immersion</span></h1>
+
         <p class="hero-subtitle">Développeur informatique spécialisé en Python et création de jeux vidéo sur Unity et Unreal Engine.</p>
+
         <div class="hero-buttons">
             <a href="#projets" class="btn-primary">Découvrir mes projets</a>
             <a href="https://github.com/oneshot666" class="btn-outline">Mon GitHub</a>
+        </div>
+
+        <div class="social-container flex gap-12 mt-6">
+            <a href="#" data-link="github" class="social-icon"><i class="fab fa-github"></i></a>
+            <a href="#" data-link="linkedin" class="social-icon"><i class="fab fa-linkedin"></i></a>
+            <a href="#" data-link="itchio" class="social-icon"><i class="fab fa-itch-io"></i></a>
         </div>
     </section>
 
@@ -31,49 +40,12 @@
 
         <section id="projets" class="py-12">
             <h2 class="section-subtitle">Projets à la une</h2>
-            <div class="project-grid">
-            </div>
+            <div id="featured-projects-container" class="project-grid"></div>
         </section>
 
-        <div class="project-grid">
-            <div id="projet-python" class="project-card group">
-                <div class="project-media">[DÉMO OU LOGO]</div>
-                <div class="project-body">
-                    <span class="tag tag-python">Python / Data</span>
-                    <h3 class="project-title group-hover:text-red-400">Titre du Projet Python</h3>
-                    <p class="project-text">Description concise du projet.</p>
-                </div>
-            </div>
-            <div id="projet-unreal" class="project-card group">
-                <div class="project-media">[VIDÉO GAMEPLAY]</div>
-                <div class="project-body">
-                    <span class="tag tag-unreal">Unreal Engine / C++</span>
-                    <h3 class="project-title group-hover:text-blue-400">Titre du Jeu Unreal</h3>
-                    <p class="project-text">Description concise du gameplay.</p>
-                </div>
-            </div>
-            <div id="projet-unity" class="project-card group">
-                <div class="project-media">[WEBGL DEMO]</div>
-                <div class="project-body">
-                    <span class="tag tag-unity">Unity / C#</span>
-                    <h3 class="project-title group-hover:text-green-400">Titre du Jeu Unity</h3>
-                    <p class="project-text">Description concise, mécanique de jeu.</p>
-                </div>
-            </div>
-            <div id="projet-general" class="project-card group">
-                <div class="project-media">[SITE WEB]</div>
-                <div class="project-body">
-                    <span class="tag tag-general">Dev web</span>
-                    <h3 class="project-title group-hover:text-green-400">Titre du site web</h3>
-                    <p class="project-text">Description concise du site.</p>
-                </div>
-            </div>
-        </div>
-
         <section class="py-12 opacity-80">
-            <h2 class="text-2xl font-bold mb-10 border-l-4 border-gray-600 pl-4 text-gray-400 uppercase tracking-widest">Autres projets GitHub</h2>
-            <div id="github-projects-container" class="github-grid">
-            </div>
+            <h2 class="text-2xl font-bold mb-10 border-l-4 border-gray-600 pl-4 text-gray-400 uppercase tracking-widest">Mes projets GitHub</h2>
+            <div id="github-projects-container" class="github-grid"></div>
         </section>
     </section>
 </main>
@@ -133,6 +105,29 @@
                         Code →
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="game-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/95 backdrop-blur-xl">
+    <button onclick="closeGameModal()" class="absolute top-6 right-6 text-white/50 hover:text-white text-4xl transition-colors">
+        <i class="fas fa-times"></i>
+    </button>
+
+    <div class="w-[90vw] h-[85vh] relative flex flex-col">
+        <div class="flex items-center gap-4 mb-4 px-2">
+            <div class="h-3 w-3 rounded-full bg-green-500 animate-pulse"></div>
+            <h2 id="modal-game-title" class="font-mono text-blue-400 uppercase tracking-tighter">Initialisation du système...</h2>
+        </div>
+
+        <div class="flex-grow bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-blue-500/10">
+            <iframe id="game-viewport" src="" class="w-full h-full border-none" allow="autoplay; fullscreen; keyboard"></iframe>
+
+            <div id="no-playable-msg" class="hidden w-full h-full flex flex-col items-center justify-center text-center p-10">
+                <i class="fas fa-database text-6xl text-gray-700 mb-6"></i>
+                <p class="text-xl font-mono text-gray-400">Ce projet nécessite un environnement Backend (MongoDB/Node.js).</p>
+                <p class="text-sm text-gray-600 mt-2">Consultez la vidéo de démo ou le Readme sur GitHub.</p>
             </div>
         </div>
     </div>
