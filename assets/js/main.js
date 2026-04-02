@@ -11,6 +11,11 @@ const USER_CONFIG = {
         itchio: "https://oneshot666.itch.io/",
         email: "mailto:mir.nathan42@gmail.com"
     },
+    animationSettings: {
+        cardDelay: 4000,    // Délai pour les cartes (en ms)
+        modalDelay: 6000,    // Délai pour la modale (en ms)
+        transitionDelay: 800    // Temps de fondu entre les images (en ms)
+    },
     projectSettings: {
         "Space-Defender": { type: "iframe", url: "https://itch.io/embed-upload/17017344?color=010046" },
 //        "Space-Invader": { type: "iframe", url: "https://oneshot666.github.io/Space-Invader/" },
@@ -128,7 +133,7 @@ function initCursor() {
     });
 
     document.addEventListener('mouseout', (e) => {
-        if (e.target.closest('a, button, .footer-handle, [role="button"]')) {
+        if (e.target.closest('a, button, .footer-handle, [role="button"], #back-to-top')) {
             cursor.style.transform = 'translate(-50%, -50%) scale(1)';
             cursor.style.backgroundColor = '#3b82f6';
             cursor.style.boxShadow = '0 0 15px #3b82f6, 0 0 30px rgba(59, 130, 246, 0.5)';
@@ -286,6 +291,8 @@ async function fetchGithubProjects() {
                 Premier chargement impossible (Quota API atteint). Réessayez dans une heure.</p>`;
         }
     }
+
+    applyProjectFilter();
 }
 
 function getProjectTech(repo) {
@@ -388,59 +395,23 @@ async function updateProjectsDropdown() {
     const container = document.getElementById('dropdown-items-container');
     if (!container) return;
 
-    // Liste des chemins possibles vers l'index selon où on se trouve
-    const pathsToTry = ['index.html', '../index.html', '../../index.html'];
-    let response;
+    const categories = [
+        { id: 'all', label: 'Tous les Projets' },
+        { id: 'unity', label: 'Systèmes Unity' },
+        { id: 'unreal', label: 'Unreal Engine' },
+        { id: 'python', label: 'Scripts Python' },
+        { id: 'web', label: 'Développement Web' }
+    ];
 
-    try {
-        // On cherche quel chemin fonctionne
-        for (let path of pathsToTry) {
-            try {
-                const testRes = await fetch(path);
-                if (testRes.ok) {
-                    response = testRes;
-                    break;
-                }
-            } catch (e) { continue; }
-        }
+    const isSubPage = window.location.pathname.includes('pages/');
+    const rootPath = isSubPage ? '../../index.html' : 'index.html';
 
-        if (!response) throw new Error('Index introuvable');
-
-        const htmlText = await response.text();
-        // 2. On transforme ce texte en un document HTML manipulable
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, 'text/html');
-        // 3. On récupère toutes les cartes de projets qui ont un titre
-        const projectCards = doc.querySelectorAll('.project-card');
-
-        if (projectCards.length === 0) {
-            container.innerHTML = '<div class="p-3 text-[10px] text-gray-500 uppercase">Aucun système détecté</div>';
-            return;
-        }
-
-        // Déterminer le chemin vers la racine selon où on se trouve
-        // Si l'URL contient "pages/", on doit remonter de deux niveaux pour atteindre index.html à la racine
-        const isSubPage = window.location.pathname.includes('pages/');
-        const rootPath = isSubPage ? '../../index.html' : 'index.html';
-
-        // 4. On génère dynamiquement le menu
-        container.innerHTML = Array.from(projectCards).map((card) => {
-            const title = card.querySelector('.project-title').innerText;
-            // On crée un ID unique si la carte n'en a pas, ou on utilise un ancrage générique
-            // RÉCUPÉRATION DU TAG (Correction ici)
-            // On récupère le texte du premier tag trouvé dans la carte
-            const tagElement = card.querySelector('.tag');
-            const tagName = tagElement ? tagElement.innerText.split('/')[0].trim().toLowerCase() : 'all';
-
-            return `<a href="${rootPath}?filter=${tagName}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group/item">
-                    <div class="w-1 h-1 rounded-full bg-blue-500 group-hover/item:shadow-[0_0_8px_#3b82f6] transition-all"></div>
-                    <span class="text-sm text-gray-400 group-hover/item:text-white transition-colors">${title}</span>
-                </a>`;
-        }).join('');
-    } catch (error) {
-        console.error("Erreur de synchronisation du menu :", error);
-        container.innerHTML = '<div class="p-3 text-[10px] text-red-500 uppercase">Erreur de liaison synchronique</div>';
-    }
+    container.innerHTML = categories.map(cat => `
+        <a href="${rootPath}?filter=${cat.id}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group/item">
+            <div class="w-1 h-1 rounded-full bg-blue-500 group-hover/item:shadow-[0_0_8px_#3b82f6] transition-all"></div>
+            <span class="text-sm text-gray-400 group-hover/item:text-white transition-colors">${cat.label}</span>
+        </a>
+    `).join('');
 }
 
 function applyProjectFilter() {
@@ -448,27 +419,29 @@ function applyProjectFilter() {
     const filter = params.get('filter'); // Récupère 'python', 'unreal', etc.
     const cards = document.querySelectorAll('.project-card');
 
+    if (cards.length === 0) return;
     if (!filter || filter === 'all') {
-        // Si aucun filtre ou "tout voir", on montre tout
-        cards.forEach(card => {
-            card.style.display = 'block';
-            card.style.opacity = '1';
-        });
+        cards.forEach(card => { card.style.display = 'flex'; setTimeout(() => card.style.opacity = '1', 10); });
         return;
     }
 
     cards.forEach(card => {
-        // On cherche le texte des tags à l'intérieur de la carte
-        const tags = card.querySelector('.tag').innerText.toLowerCase();
+        const tagElement = card.querySelector('.tag');
+        if (!tagElement) return;
 
-        if (tags.includes(filter)) {
-            card.style.display = 'block';
-            // Petit effet de fondu
+        const tagText = tagElement.innerText.toLowerCase();
+        if (!filter || filter === 'all') {
+            card.style.display = 'flex';
+            card.style.opacity = '1';
+            return;
+        }
+
+        if (tagText.includes(filter.toLowerCase())) {
+            card.style.display = 'flex';
             setTimeout(() => card.style.opacity = '1', 10);
         } else {
-            // On cache les autres avec une transition
-            card.style.opacity = '0';
             setTimeout(() => card.style.display = 'none', 500);
+            card.style.opacity = '0';                                           // Hide if not found
         }
     });
 }
@@ -570,7 +543,7 @@ function startAutoPlay(card, repo, index) {
             const lib = projectLibrary[repo];
             lib.current = (lib.current + 1) % lib.images.length;
             updateCardDisplay(card, repo);
-        }, 4000); // Intervalle de 4s
+        }, USER_CONFIG.animationSettings.cardDelay); // Intervalle de 4s
 
         // Optionnel : Forcer un premier changement immédiat après le stagger
         const lib = projectLibrary[repo];
@@ -611,7 +584,7 @@ function updateCardDisplay(card, repo) {
         if (imgElement.complete) {
             imgElement.style.opacity = '1';
         }
-    }, 800);
+    }, USER_CONFIG.animationSettings.transitionDelay);
 }
 
 window.changeImage = function(button, direction, event) {
@@ -772,7 +745,7 @@ function startModalAutoPlay(repoName) {
     modalAutoPlayInterval = setInterval(() => {
         lib.currentModalIndex = (lib.currentModalIndex + 1) % lib.images.length;
         changeModalImage(repoName, lib.currentModalIndex);
-    }, 6000); // On reste 6 secondes sur chaque image (plus relax)
+    }, USER_CONFIG.animationSettings.modalDelay); // On reste 6 secondes sur chaque image (plus relax)
 }
 
 function changeModalImage(repoName, index) {
@@ -844,12 +817,13 @@ async function loadModalReadme(repoName) {
         if (res.ok) {
             const htmlText = await res.text();
             const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, 'text/html');
             doc.querySelectorAll('img').forEach(img => img.remove());           // Remove images (bagdes, logos...)
             doc.querySelectorAll('.anchor').forEach(anchor => anchor.remove()); // Remove link icons
-            const doc = parser.parseFromString(htmlContent, 'text/html');
-            readmeContainer.innerHTML = doc.body.innerHTML;
+            const finalHtml = doc.body.innerHTML || htmlText;                   // In case of a problem
+            readmeContainer.innerHTML = finalHtml;
 
-            localStorage.setItem(cacheKey, JSON.stringify({ html: htmlText, timestamp: Date.now() }));  // Save cache
+            localStorage.setItem(cacheKey, JSON.stringify({ html: finalHtml, timestamp: Date.now() }));  // Save cache
             readmeWrapper.classList.remove('hidden');
         } else {
             readmeWrapper.classList.add('hidden');                              // Hide if error
@@ -942,23 +916,7 @@ function closeGameModal() {
     document.body.style.overflow = 'auto';
 }
 
-/* --- INITIALIZATION --- */
-window.addEventListener('DOMContentLoaded', applyProjectFilter);                // Launch at loading page
-window.addEventListener('popstate', applyProjectFilter);                        // Check url modifications (without reloading)
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadComponent('header-placeholder', 'assets/templates/header.html');
-    loadComponent('footer-placeholder', 'assets/templates/footer.html');
-
-    initCursor();                                                               // Launch modules
-    new ParticleManager('neural-canvas');
-    fetchGithubProjects();
-    initContactForm();
-
-    setTimeout(updateProjectsDropdown, 500);
-});
-
-/* --- GESTION DU FORMULAIRE DE CONTACT --- */
+/* -- Contact form -- */
 function initContactForm() {
     const form = document.getElementById('contact-form');
     const charCount = document.getElementById('char-count');
@@ -1023,3 +981,41 @@ function initContactForm() {
         }
     });
 }
+
+/* -- Arrow to go back to top of page -- */
+function initBackToTop() {
+    const btn = document.getElementById('back-to-top');
+    if (!btn) return;
+
+    window.addEventListener('scroll', () => {
+        const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercent = (window.scrollY / scrollableHeight) * 100;
+        if (scrollPercent >= 50) {                                              // Appear only at 80% of page height
+            btn.classList.remove('opacity-0', 'invisible');
+            btn.classList.add('opacity-100', 'visible');
+        } else {
+            btn.classList.remove('opacity-100', 'visible');
+            btn.classList.add('opacity-0', 'invisible');
+        }
+    });
+
+    btn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+/* --- INITIALIZATION --- */
+document.addEventListener('DOMContentLoaded', () => {
+    loadComponent('header-placeholder', 'assets/templates/header.html');
+    loadComponent('footer-placeholder', 'assets/templates/footer.html');
+
+    initCursor();                                                               // Launch modules
+    initBackToTop();
+    new ParticleManager('neural-canvas');
+    fetchGithubProjects();
+    initContactForm();
+
+    setTimeout(updateProjectsDropdown, 500);
+});
+
+window.addEventListener('popstate', applyProjectFilter);                        // Check url modifications (without reloading)
