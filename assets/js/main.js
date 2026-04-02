@@ -347,16 +347,16 @@ function renderRepos(repos) {
 
     return repos.map(repo => {
         const tech = getProjectTech(repo);                                      // Get infos (tag...)
-
         const starCount = repo.stargazers_count > 0 ?                           // Display stars
             `<span class="text-yellow-500 text-[10px] ml-2">★ ${repo.stargazers_count}</span>` : '';
-
         const r_name = repo.name.includes("-") ? titleCase(repo.name.replace(/-/g, ' ')) : repo.name;
+        const hasImages = projectLibrary[repo.name] && projectLibrary[repo.name].images.length > 1;
+        const multipleImagesClass = hasImages ? 'has-multiple-images' : '';
 
         return `
-        <div class="project-card group cursor-pointer" onclick="openProjectModal('${username}/${repo.name}')"
+        <div class="project-card group cursor-pointer ${multipleImagesClass}" onclick="openProjectModal('${username}/${repo.name}')"
         data-repo="${username}/${repo.name}" data-title="${r_name}" data-stars="${repo.stargazers_count}" data-img-path="img/screenshots">
-            <div class="project-media loading relative h-48 w-full overflow-hidden bg-black/50">
+            <div class="project-media loading relative w-full overflow-hidden bg-black/50">
                 <img src="assets/img/icon-bg.png" class="project-viewer w-full h-full object-cover transition-opacity duration-500" alt="Aperçu">
 
                 <div class="viewer-controls hidden absolute inset-0 z-30">
